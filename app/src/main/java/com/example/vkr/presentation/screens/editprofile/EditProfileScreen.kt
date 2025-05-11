@@ -24,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
@@ -33,30 +34,25 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun EditProfileScreen(navController: NavController) {
+    val viewModel: EditProfileViewModel = viewModel()
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
-    val scope = rememberCoroutineScope()
     val phone by sessionManager.userPhone.collectAsState(initial = null)
+    val scope = rememberCoroutineScope()
 
-    val userDao = AppDatabase.getInstance(context).userDao()
-    val presenter = remember { EditProfilePresenter(context, userDao, sessionManager) }
-
-    val state = presenter.uiState
-
-    // Автоматическая загрузка данных при наличии телефона
     LaunchedEffect(phone) {
-        phone?.let { presenter.loadUser(it) }
+        phone?.let { viewModel.loadUserByPhone(it) }
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        presenter.onAvatarChange(uri)
+        viewModel.onAvatarChange(uri)
     }
 
     val avatarPainter = when {
-        state.avatarUri != null -> rememberAsyncImagePainter(state.avatarUri)
-        !state.user?.avatarUri.isNullOrEmpty() -> rememberAsyncImagePainter(Uri.parse(state.user!!.avatarUri))
+        viewModel.avatarUri != null -> rememberAsyncImagePainter(viewModel.avatarUri)
+        !viewModel.user?.avatarUri.isNullOrEmpty() -> rememberAsyncImagePainter(Uri.parse(viewModel.user!!.avatarUri))
         else -> painterResource(id = R.drawable.images)
     }
 
@@ -96,38 +92,38 @@ fun EditProfileScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = state.fullName,
-            onValueChange = presenter::onFullNameChange,
+            value = viewModel.fullName,
+            onValueChange = viewModel::onFullNameChange,
             label = { Text("Имя") },
-            isError = state.fullNameError,
+            isError = viewModel.fullNameError,
             modifier = Modifier.fillMaxWidth()
         )
-        if (state.fullNameError)
+        if (viewModel.fullNameError)
             Text("Имя не может быть пустым", color = Color.Red, fontSize = 12.sp)
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = state.username,
-            onValueChange = presenter::onUsernameChange,
+            value = viewModel.username,
+            onValueChange = viewModel::onUsernameChange,
             label = { Text("Никнейм") },
-            isError = state.usernameError,
+            isError = viewModel.usernameError,
             modifier = Modifier.fillMaxWidth()
         )
-        if (state.usernameError)
+        if (viewModel.usernameError)
             Text("Минимум 3 символа", color = Color.Red, fontSize = 12.sp)
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = state.phone,
-            onValueChange = presenter::onPhoneChange,
+            value = viewModel.phone,
+            onValueChange = viewModel::onPhoneChange,
             label = { Text("Телефон") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            isError = state.phoneError,
+            isError = viewModel.phoneError,
             modifier = Modifier.fillMaxWidth()
         )
-        if (state.phoneError)
+        if (viewModel.phoneError)
             Text("Некорректный номер", color = Color.Red, fontSize = 12.sp)
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -135,7 +131,7 @@ fun EditProfileScreen(navController: NavController) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Badge, contentDescription = "Роль", tint = Color.Gray)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Роль: ${state.user?.role ?: "неизвестна"}", style = MaterialTheme.typography.bodyMedium)
+            Text("Роль: ${viewModel.user?.role ?: "неизвестна"}", style = MaterialTheme.typography.bodyMedium)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -147,7 +143,7 @@ fun EditProfileScreen(navController: NavController) {
             Button(
                 onClick = {
                     scope.launch {
-                        presenter.save {
+                        viewModel.save {
                             navController.popBackStack()
                         }
                     }

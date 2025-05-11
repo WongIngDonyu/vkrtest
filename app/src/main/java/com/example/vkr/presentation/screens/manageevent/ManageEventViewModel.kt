@@ -1,0 +1,58 @@
+package com.example.vkr.presentation.screens.manageevent
+
+import android.app.Application
+import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.vkr.data.AppDatabase
+import com.example.vkr.data.model.EventEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class ManageEventViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val context = application.applicationContext
+    private val eventDao = AppDatabase.getInstance(context).eventDao()
+    private val teamDao = AppDatabase.getInstance(context).teamDao()
+
+    var event by mutableStateOf<EventEntity?>(null)
+        private set
+
+    var teamName by mutableStateOf("")
+        private set
+
+    var photoUris by mutableStateOf<List<Uri>>(emptyList())
+        private set
+
+    fun loadEvent(eventId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val loadedEvent = eventDao.getEventById(eventId)
+            val team = loadedEvent?.teamId?.let { id ->
+                teamDao.getAllTeams().firstOrNull { it.id == id }?.name ?: ""
+            } ?: ""
+
+            withContext(Dispatchers.Main) {
+                event = loadedEvent
+                teamName = team
+            }
+        }
+    }
+
+    fun onImagePicked(uris: List<Uri>) {
+        photoUris = photoUris + uris
+    }
+
+    fun finishEvent(onSuccess: () -> Unit) {
+        val e = event ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            eventDao.updateEvent(e.copy(isFinished = true))
+            withContext(Dispatchers.Main) {
+                onSuccess()
+            }
+        }
+    }
+}

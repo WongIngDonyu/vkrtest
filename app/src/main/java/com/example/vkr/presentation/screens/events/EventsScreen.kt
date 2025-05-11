@@ -1,5 +1,6 @@
 package com.example.vkr.presentation.screens.events
 
+import android.app.Application
 import android.net.Uri
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -19,7 +20,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
 import com.example.vkr.data.AppDatabase
@@ -35,84 +41,221 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
+
 @Composable
 fun EventsScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState,
-    presenter: EventsContract.Presenter
+    navController: NavController,
+    viewModel: EventsViewModel = viewModel()
 ) {
-    val context = LocalContext.current
+    val events = viewModel.filteredEvents
+    val joinedEvents = viewModel.joinedEvents
+    val organizedEvents = viewModel.organizedEvents
+    val selectedEvent = viewModel.selectedEvent
+    val searchQuery = viewModel.searchQuery
+    val selectedFilter = viewModel.selectedFilter
+    val isOrganizer = viewModel.isOrganizer
     val scope = rememberCoroutineScope()
-    val events = remember { mutableStateListOf<EventEntity>() }
-    val selectedEvent = remember { mutableStateOf<EventEntity?>(null) }
 
-    // "View" реализация
-    val view = object : EventsContract.View {
-        override fun showEvents(eventsList: List<EventEntity>) {
-            events.clear()
-            events.addAll(eventsList)
-        }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        Text("Мероприятия", style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.height(12.dp))
 
-        override fun showSnackbar(message: String) {
-            scope.launch {
-                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = viewModel::onSearchChanged,
+            placeholder = { Text("Поиск мероприятий") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp)
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        val filters = listOf("Все", "Сегодня", "На неделе", "В этом месяце")
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            filters.forEach { label ->
+                val isSelected = selectedFilter == label
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) Color(0xFF7A5EFF) else Color(0xFFF2EBFF))
+                        .clickable { viewModel.onFilterSelected(label) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) Color.White else Color(0xFF7A5EFF),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1
+                    )
+                }
             }
         }
 
-        override fun navigateToEventDetails(event: EventEntity) {
-            selectedEvent.value = event
+        Spacer(Modifier.height(16.dp))
+
+        if (events.isNotEmpty()) {
+            Text("Все мероприятия", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(events) { event ->
+                    val isJoined = joinedEvents.any { it.id == event.id }
+                    val isUserOrganizer = organizedEvents.any { it.id == event.id }
+                    val canJoin = !isJoined && event.creatorId != viewModel.currentUserId
+
+                    EventCardItem(
+                        event = event,
+                        onClick = { viewModel.onEventClick(event) },
+                        onJoin = {
+                            viewModel.joinEvent(event.id) {
+                                scope.launch { snackbarHostState.showSnackbar(it) }
+                            }
+                        },
+                        showJoinButton = canJoin,
+                        modifier = Modifier.width(180.dp)
+                    )
+                }
+            }
         }
-    }
 
-    // Привязка view к презентеру
-    LaunchedEffect(Unit) {
-        if (presenter is EventsPresenter) {
-            presenter.attachView(view)
-            presenter.loadEvents()
-        }
-    }
-
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
-        Column(
-            modifier = modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-        ) {
-            Text("Мероприятия", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(16.dp))
-
-            events.forEach { event ->
+        if (joinedEvents.isNotEmpty()) {
+            Text("Вы участвуете", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            joinedEvents.forEach { event ->
                 MyEventItem(
                     event = event,
-                    onDelete = { presenter.leaveEvent(event.id) },
-                    onClick = { presenter.onEventSelected(event) }
+                    onClick = { viewModel.onEventClick(event) },
+                    onDelete = {
+                        viewModel.leaveEvent(event.id) {
+                            scope.launch { snackbarHostState.showSnackbar(it) }
+                        }
+                    }
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        if (organizedEvents.isNotEmpty()) {
+            Text("Твои мероприятия", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            organizedEvents.forEach { event ->
+                MyEventItem(
+                    event = event,
+                    onClick = { viewModel.onEventClick(event) },
+                    onDelete = null // нельзя выйти из своих мероприятий
+                )
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
 
-    selectedEvent.value?.let { event ->
+    selectedEvent?.let { event ->
         AlertDialog(
-            onDismissRequest = { selectedEvent.value = null },
+            onDismissRequest = viewModel::onDialogDismiss,
             confirmButton = {
-                TextButton(onClick = { selectedEvent.value = null }) {
+                TextButton(onClick = viewModel::onDialogDismiss) {
                     Text("ОК")
                 }
             },
-            title = { Text(event.title, style = MaterialTheme.typography.headlineSmall) },
+            title = { Text(event.title, style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
-                    Text("Место: ${event.locationName}", style = MaterialTheme.typography.bodyLarge)
-                    Text("Время: ${event.dateTime}", style = MaterialTheme.typography.bodyMedium)
+                    Text("📍 ${event.locationName}")
+                    Text("🗓 ${event.dateTime}")
                     Spacer(Modifier.height(8.dp))
-                    Text(event.description, style = MaterialTheme.typography.bodySmall)
+                    Text(event.description)
                 }
             },
-            shape = RoundedCornerShape(24.dp),
-            tonalElevation = 6.dp
+            shape = RoundedCornerShape(24.dp)
         )
+    }
+}
+
+
+
+
+@Composable
+fun EventCardItem(
+    event: EventEntity,
+    onClick: () -> Unit,
+    onJoin: () -> Unit,
+    showJoinButton: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val isFinished = event.isFinished
+    val backgroundColor = if (isFinished) Color(0xFFE0E0E0) else Color.White
+    val textColor = if (isFinished) Color.Gray else Color.Unspecified
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(backgroundColor)
+            .clickable(enabled = !isFinished) { onClick() }
+            .padding(8.dp)
+    ) {
+        Image(
+            painter = rememberAsyncImagePainter(event.imageUri ?: ""),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .clip(RoundedCornerShape(16.dp)),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = event.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = textColor
+                )
+                Text(
+                    text = event.locationName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textColor
+                )
+            }
+
+            if (showJoinButton && !isFinished) {
+                IconButton(
+                    onClick = onJoin,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Присоединиться",
+                        tint = Color(0xFF7A5EFF)
+                    )
+                }
+            }
+        }
+
+        if (isFinished) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Завершено",
+                color = Color.Red,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }

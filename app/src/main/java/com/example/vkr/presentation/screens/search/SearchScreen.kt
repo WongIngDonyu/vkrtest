@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.TeamEntity
@@ -45,29 +46,12 @@ import com.yandex.mapkit.map.PolygonMapObject
 fun SearchScreen(navController: NavController) {
     val context = LocalContext.current
     val mapView = rememberMapViewWithLifecycle()
-    val teamDao = remember { AppDatabase.getInstance(context).teamDao() }
+    val viewModel: SearchViewModel = viewModel()
 
-    var state by remember { mutableStateOf(SearchContract.ViewState()) }
+    val teams by viewModel.teams.collectAsState()
+    val showDialog = viewModel.showDialog
 
-    val view = remember {
-        object : SearchContract.View {
-            override fun updateState(newState: SearchContract.ViewState) {
-                state = newState
-            }
-
-            override fun navigateToTeamDetail(teamId: Int) {
-                navController.navigate("teamDetail/$teamId")
-            }
-        }
-    }
-
-    val presenter = remember { SearchPresenter(view, teamDao) }
-
-    LaunchedEffect(Unit) {
-        presenter.onInit()
-    }
-
-    val teamAreas = state.teams.map { entity ->
+    val teamAreas = teams.map { entity ->
         val points = parsePoints(entity.areaPoints)
         TeamArea(
             teamId = entity.id,
@@ -89,10 +73,12 @@ fun SearchScreen(navController: NavController) {
                             0.0f
                         )
                     )
-                    mapView.map.isZoomGesturesEnabled = false
-                    mapView.map.isScrollGesturesEnabled = true
-                    mapView.map.isRotateGesturesEnabled = false
-                    mapView.map.isTiltGesturesEnabled = false
+                    mapView.map.apply {
+                        isZoomGesturesEnabled = false
+                        isScrollGesturesEnabled = true
+                        isRotateGesturesEnabled = false
+                        isTiltGesturesEnabled = false
+                    }
 
                     val mapObjects = mapView.map.mapObjects
                     mapObjects.clear()
@@ -119,7 +105,7 @@ fun SearchScreen(navController: NavController) {
                         override fun onMapTap(map: Map, point: Point) {
                             for ((polygon, area) in polygons) {
                                 if (isPointInsidePolygon(polygon.geometry.outerRing.points, point)) {
-                                    presenter.onTeamClicked(area.teamId)
+                                    viewModel.onTeamClicked(area.teamId, navController)
                                     break
                                 }
                             }
@@ -134,14 +120,14 @@ fun SearchScreen(navController: NavController) {
             )
         }
 
-        if (state.teams.isNotEmpty()) {
-            val topTeams = state.teams.sortedByDescending { it.points }.take(3)
+        if (teams.isNotEmpty()) {
+            val topTeams = teams.sortedByDescending { it.points }.take(3)
 
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 24.dp)
-                    .clickable { presenter.onShowDialog() }
+                    .clickable { viewModel.onShowDialog() }
                     .background(Color.Black.copy(alpha = 0.4f), shape = RoundedCornerShape(12.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .widthIn(max = 200.dp)
@@ -169,18 +155,18 @@ fun SearchScreen(navController: NavController) {
         }
     }
 
-    if (state.showDialog) {
+    if (showDialog) {
         AlertDialog(
-            onDismissRequest = { presenter.onHideDialog() },
+            onDismissRequest = viewModel::onHideDialog,
             confirmButton = {
-                TextButton(onClick = { presenter.onHideDialog() }) {
+                TextButton(onClick = viewModel::onHideDialog) {
                     Text("Закрыть")
                 }
             },
             title = { Text("Полный рейтинг команд") },
             text = {
                 Column {
-                    state.teams.sortedByDescending { it.points }.forEachIndexed { index, team ->
+                    teams.sortedByDescending { it.points }.forEachIndexed { index, team ->
                         Text(
                             text = "${index + 1}. ${team.name} — ${team.points} очков",
                             style = MaterialTheme.typography.bodyMedium

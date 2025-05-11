@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
@@ -43,50 +44,21 @@ import java.util.Locale
 @Composable
 fun ManageEventScreen(eventId: Int, navController: NavController) {
     val context = LocalContext.current
-    val database = AppDatabase.getInstance(context)
+    val viewModel: ManageEventViewModel = viewModel()
 
-    var state by remember { mutableStateOf(ManageEventContract.ViewState()) }
+    val event = viewModel.event
+    val teamName = viewModel.teamName
+    val photoUris = viewModel.photoUris
 
-    // 1. Создаём presenter сначала
-    lateinit var presenter: ManageEventPresenter
+    LaunchedEffect(eventId) {
+        viewModel.loadEvent(eventId)
+    }
 
-    // 2. Создаём imagePickerLauncher, но после presenter будет привязан
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        presenter.onImagePicked(uris)
+        viewModel.onImagePicked(uris)
     }
-
-    val view = remember {
-        object : ManageEventContract.View {
-            override fun updateState(newState: ManageEventContract.ViewState) {
-                state = newState
-            }
-
-            override fun goBack() {
-                navController.popBackStack()
-            }
-
-            override fun openImagePicker() {
-                imagePickerLauncher.launch("image/*")
-            }
-        }
-    }
-
-    // 3. Теперь можно безопасно инициализировать
-    presenter = remember {
-        ManageEventPresenter(
-            view = view,
-            eventDao = database.eventDao(),
-            teamDao = database.teamDao()
-        )
-    }
-
-    LaunchedEffect(Unit) {
-        presenter.onInit(eventId)
-    }
-
-    val event = state.event
 
     if (event != null) {
         Column(
@@ -118,9 +90,10 @@ fun ManageEventScreen(eventId: Int, navController: NavController) {
             Spacer(Modifier.height(8.dp))
 
             Text("Команда", style = MaterialTheme.typography.labelMedium)
-            Text(state.teamName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+            Text(teamName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
 
             Spacer(Modifier.height(24.dp))
+
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!event.isFinished) {
                     item {
@@ -128,7 +101,7 @@ fun ManageEventScreen(eventId: Int, navController: NavController) {
                             modifier = Modifier
                                 .size(100.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0xFFF2EBFF)) // лавандовый фон
+                                .background(Color(0xFFF2EBFF))
                                 .clickable { imagePickerLauncher.launch("image/*") },
                             contentAlignment = Alignment.Center
                         ) {
@@ -137,7 +110,7 @@ fun ManageEventScreen(eventId: Int, navController: NavController) {
                     }
                 }
 
-                items(state.photoUris) { uri ->
+                items(photoUris) { uri ->
                     Image(
                         painter = rememberAsyncImagePainter(uri),
                         contentDescription = null,
@@ -148,44 +121,16 @@ fun ManageEventScreen(eventId: Int, navController: NavController) {
                     )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (!event.isFinished) {
-                    item {
-                        ElevatedCard(
-                            modifier = Modifier.size(120.dp),
-                            onClick = {
-                                imagePickerLauncher.launch("image/*")
-                            }
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("+", style = MaterialTheme.typography.headlineLarge)
-                            }
-                        }
-                    }
-                }
-
-                items(state.photoUris) { uri ->
-                    Image(
-                        painter = rememberAsyncImagePainter(uri),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                    )
-                }
-            }
 
             Spacer(Modifier.height(32.dp))
 
             if (!event.isFinished) {
                 Button(
-                    onClick = { presenter.onFinishEvent() },
+                    onClick = {
+                        viewModel.finishEvent {
+                            navController.popBackStack()
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF))
                 ) {
@@ -196,7 +141,7 @@ fun ManageEventScreen(eventId: Int, navController: NavController) {
             }
 
             OutlinedButton(
-                onClick = { presenter.onBackClicked() },
+                onClick = { navController.popBackStack() },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Назад")
@@ -208,4 +153,3 @@ fun ManageEventScreen(eventId: Int, navController: NavController) {
         }
     }
 }
-

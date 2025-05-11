@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.session.UserSessionManager
-import com.example.vkr.presentation.screens.events.EventsPresenter
 import com.example.vkr.presentation.screens.events.EventsScreen
 import com.example.vkr.presentation.screens.home.HomeScreen
 import com.example.vkr.presentation.screens.profile.ProfileScreen
@@ -37,14 +36,7 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
     val context = LocalContext.current
     val session = remember { UserSessionManager(context) }
     val role by session.userRole.collectAsState(initial = null)
-    val db = AppDatabase.getInstance(context)
-    val presenter = remember {
-        EventsPresenter(
-            eventDao = db.eventDao(),
-            userDao = db.userDao(),
-            session = UserSessionManager(context)
-        )
-    }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
@@ -67,13 +59,12 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
                 FloatingActionButton(
                     onClick = { navController.navigate("create_event") },
                     containerColor = Color(0xFF7A5EFF),
-                    modifier = Modifier
-                        .size(48.dp) // ➡️ Меньший размер кнопки
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Создать мероприятие",
-                        modifier = Modifier.size(24.dp) // ➡️ Иконка поменьше
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -85,7 +76,7 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
             "events" -> EventsScreen(
                 modifier = Modifier.padding(padding),
                 snackbarHostState = snackbarHostState,
-                presenter = presenter
+                navController = navController // если нужен
             )
             "profile" -> ProfileScreen(navController, Modifier.padding(padding))
         }

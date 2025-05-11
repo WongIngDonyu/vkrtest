@@ -22,6 +22,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,127 +40,101 @@ import androidx.navigation.NavController
 import com.example.vkr.R
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.presentation.components.RoleDropdown
+import com.example.vkr.presentation.screens.signup.SignUpViewModel
 
 @Composable
 fun SignUpScreen(navController: NavController) {
     val context = LocalContext.current
     val userDao = remember { AppDatabase.getInstance(context).userDao() }
+    val viewModel = remember { SignUpViewModel(userDao) }
 
-    var name by remember { mutableStateOf("") }
-    var nickname by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
-
-    var errors by remember { mutableStateOf(SignUpContract.ValidationErrors()) }
-
-    val view = remember {
-        object : SignUpContract.View {
-            override fun showValidationErrors(e: SignUpContract.ValidationErrors) {
-                errors = e
+    LaunchedEffect(viewModel.navigateToLogin) {
+        if (viewModel.navigateToLogin) {
+            navController.navigate("login") {
+                popUpTo("signup") { inclusive = true }
             }
-
-            override fun navigateToLogin() {
-                navController.navigate("login") {
-                    popUpTo("signup") { inclusive = true }
-                }
-            }
+            viewModel.onNavigationHandled()
         }
     }
 
-    val presenter = remember { SignUpPresenter(view, userDao) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
         Text("Создайте аккаунт", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Text("Присоединяйтесь к движению за чистоту!", style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Поля
         OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
+            value = viewModel.name,
+            onValueChange = { viewModel.name = it },
             label = { Text("Введите имя") },
-            isError = errors.nameError,
+            isError = viewModel.nameError,
             modifier = Modifier.fillMaxWidth()
         )
-        if (errors.nameError) Text("Имя не может быть пустым", color = Color.Red)
+        if (viewModel.nameError) Text("Имя не может быть пустым", color = Color.Red)
 
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
-            value = nickname,
-            onValueChange = { nickname = it },
+            value = viewModel.nickname,
+            onValueChange = { viewModel.nickname = it },
             label = { Text("Введите никнейм") },
-            isError = errors.nicknameError,
+            isError = viewModel.nicknameError,
             modifier = Modifier.fillMaxWidth()
         )
-        if (errors.nicknameError) Text("Никнейм должен быть не короче 3 символов", color = Color.Red)
+        if (viewModel.nicknameError) Text("Минимум 3 символа", color = Color.Red)
 
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
-            value = phone,
-            onValueChange = { phone = it },
+            value = viewModel.phone,
+            onValueChange = { viewModel.phone = it },
             label = { Text("Введите номер телефона") },
-            isError = errors.phoneError,
+            isError = viewModel.phoneError,
             modifier = Modifier.fillMaxWidth()
         )
-        if (errors.phoneError) Text("Некорректный номер телефона", color = Color.Red)
+        if (viewModel.phoneError) Text("Некорректный номер", color = Color.Red)
 
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
+            value = viewModel.password,
+            onValueChange = { viewModel.password = it },
             label = { Text("Введите пароль") },
-            isError = errors.passwordError,
-            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            isError = viewModel.passwordError,
+            visualTransformation = if (viewModel.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                    Icon(Icons.Default.Visibility, contentDescription = "Показать пароль")
+                IconButton(onClick = viewModel::togglePasswordVisibility) {
+                    Icon(Icons.Default.Visibility, contentDescription = null)
                 }
             },
             modifier = Modifier.fillMaxWidth()
         )
-        if (errors.passwordError) Text("Пароль не может быть пустым", color = Color.Red)
+        if (viewModel.passwordError) Text("Пароль не может быть пустым", color = Color.Red)
 
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
+            value = viewModel.confirmPassword,
+            onValueChange = { viewModel.confirmPassword = it },
             label = { Text("Повторите пароль") },
-            isError = errors.confirmPasswordError,
-            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            isError = viewModel.confirmPasswordError,
+            visualTransformation = if (viewModel.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                    Icon(Icons.Default.Visibility, contentDescription = "Показать пароль")
+                IconButton(onClick = viewModel::togglePasswordVisibility) {
+                    Icon(Icons.Default.Visibility, contentDescription = null)
                 }
             },
             modifier = Modifier.fillMaxWidth()
         )
-        if (errors.confirmPasswordError) Text("Пароли не совпадают", color = Color.Red)
+        if (viewModel.confirmPasswordError) Text("Пароли не совпадают", color = Color.Red)
 
         Spacer(modifier = Modifier.height(12.dp))
         RoleDropdown(
-            selectedRole = selectedRole,
-            onRoleSelected = { selectedRole = it },
-            isError = errors.roleError
+            selectedRole = viewModel.selectedRole,
+            onRoleSelected = { viewModel.selectedRole = it },
+            isError = viewModel.roleError
         )
-        if (errors.roleError) Text("Выберите роль", color = Color.Red)
+        if (viewModel.roleError) Text("Выберите роль", color = Color.Red)
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Кнопка
         Button(
-            onClick = {
-                presenter.onSignUpClicked(
-                    name, nickname, phone, password, confirmPassword, selectedRole
-                )
-            },
+            onClick = viewModel::signUp,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF))
         ) {
@@ -167,7 +142,6 @@ fun SignUpScreen(navController: NavController) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
         Text(
             text = "Уже есть аккаунт? Войти",
             modifier = Modifier

@@ -1,6 +1,7 @@
 package com.example.vkr.presentation.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
@@ -32,57 +34,62 @@ import java.io.File
 @Composable
 fun MyEventItem(
     event: EventEntity,
-    onDelete: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
-    val imagePainter = if (!event.imageUri.isNullOrBlank()) {
-        rememberAsyncImagePainter(model = File(event.imageUri))
-    } else {
-        painterResource(id = R.drawable.images)
-    }
+    val isFinished = event.isFinished
+    val titleColor = if (isFinished) Color.Gray else Color.Unspecified
+    val dateColor = if (isFinished) Color.LightGray else Color.Gray
+    val backgroundColor = if (isFinished) Color(0xFFF0F0F0) else Color.White
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(horizontal = 8.dp)
+            .background(backgroundColor)
+            .clickable(enabled = !isFinished) { onClick() }
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = imagePainter,
-            contentDescription = event.title,
+            painter = rememberAsyncImagePainter(event.imageUri ?: ""),
+            contentDescription = null,
             modifier = Modifier
-                .size(48.dp)
+                .size(56.dp)
                 .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop
         )
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(Modifier.width(8.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
+        Column(Modifier.weight(1f)) {
             Text(
-                text = event.title,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1
+                event.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = titleColor
             )
             Text(
-                text = event.dateTime,
+                event.dateTime,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                maxLines = 1
+                color = dateColor
             )
+            if (isFinished) {
+                Text(
+                    text = "Завершено",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
-        IconButton(
-            onClick = onDelete,
-            modifier = Modifier.size(36.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Удалить",
-                tint = Color(0xFFFF3B30) // системный красный, как на скрине
-            )
+        if (onDelete != null && !isFinished) {
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Удалить",
+                    tint = Color.Red
+                )
+            }
         }
     }
 }

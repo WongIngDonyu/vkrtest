@@ -1,0 +1,86 @@
+package com.example.vkr.presentation.screens.teamdetail
+
+import android.app.Application
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.vkr.data.AppDatabase
+import com.example.vkr.data.model.EventEntity
+import com.example.vkr.data.model.TeamEntity
+import com.example.vkr.data.model.UserEntity
+import com.example.vkr.data.session.UserSessionManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class TeamDetailViewModel(
+    application: Application
+) : AndroidViewModel(application) {
+
+    private val context = application.applicationContext
+    private val teamDao = AppDatabase.getInstance(context).teamDao()
+    private val userDao = AppDatabase.getInstance(context).userDao()
+    private val eventDao = AppDatabase.getInstance(context).eventDao()
+    private val session = UserSessionManager(context)
+
+    var team by mutableStateOf<TeamEntity?>(null)
+        private set
+
+    var users by mutableStateOf<List<UserEntity>>(emptyList())
+        private set
+
+    var events by mutableStateOf<List<EventEntity>>(emptyList())
+        private set
+
+    var currentUser by mutableStateOf<UserEntity?>(null)
+        private set
+
+    var selectedEvent by mutableStateOf<EventEntity?>(null)
+        private set
+
+    fun loadTeam(teamId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val t = teamDao.getAllTeams().firstOrNull { it.id == teamId }
+            val u = teamDao.getUsersByTeam(teamId)
+            val e = eventDao.getEventsByTeam(teamId)
+            val phone = session.userPhone.firstOrNull()
+            val current = phone?.let { userDao.getUserByPhone(it) }
+
+            withContext(Dispatchers.Main) {
+                team = t
+                users = u
+                events = e
+                currentUser = current
+            }
+        }
+    }
+
+    fun joinTeam() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = currentUser ?: return@launch
+            val tid = team?.id ?: return@launch
+            teamDao.joinTeam(user.id, tid)
+            loadTeam(tid)
+        }
+    }
+
+    fun selectEvent(event: EventEntity) {
+        selectedEvent = event
+    }
+
+
+    fun onDialogClose() {
+        selectedEvent = null
+    }
+
+    fun leaveTeam() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = currentUser ?: return@launch
+            teamDao.leaveTeam(user.id)
+            team?.id?.let { loadTeam(it) }
+        }
+    }
+}

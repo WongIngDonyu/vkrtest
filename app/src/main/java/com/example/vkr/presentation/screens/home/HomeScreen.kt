@@ -1,5 +1,6 @@
 package com.example.vkr.presentation.screens.home
 
+import android.app.Application
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -26,10 +27,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
 import com.example.vkr.data.AppDatabase
+import com.example.vkr.data.dao.EventDao
+import com.example.vkr.data.dao.UserDao
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.presentation.components.ActivityItem
 import com.example.vkr.presentation.components.EventCard
@@ -42,33 +51,33 @@ import java.time.LocalDateTime
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val application = context.applicationContext as Application
     val eventDao = remember { AppDatabase.getInstance(context).eventDao() }
     val userDao = remember { AppDatabase.getInstance(context).userDao() }
 
-    var selectedEvent by remember { mutableStateOf<EventEntity?>(null) }
-    var state by remember { mutableStateOf(HomeContract.ViewState()) }
+    val viewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory(application, eventDao, userDao)
+    )
 
-    val view = remember {
-        object : HomeContract.View {
-            override fun updateState(newState: HomeContract.ViewState) {
-                state = newState
-            }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-            override fun showEventDetails(event: EventEntity) {
-                selectedEvent = event
+    // 🔄 Перезагрузка событий при возврате на экран
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadEvents()
             }
+        }
+        val lifecycle = lifecycleOwner.lifecycle
+        lifecycle.addObserver(observer)
 
-            override fun hideEventDetails() {
-                selectedEvent = null
-            }
+        onDispose {
+            lifecycle.removeObserver(observer)
         }
     }
 
-    val presenter = remember { HomePresenter(view, eventDao, userDao) }
-
-    LaunchedEffect(Unit) {
-        presenter.onInit()
-    }
+    val state = viewModel.state
+    val selectedEvent = viewModel.selectedEvent
 
     Column(modifier = modifier.padding(16.dp)) {
         Text("Добро пожаловать в", style = MaterialTheme.typography.bodyMedium)
@@ -77,8 +86,8 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = state.searchQuery, // просто строка
-            onValueChange = { presenter.onSearchChanged(it) },
+            value = state.searchQuery,
+            onValueChange = viewModel::onSearchChanged,
             placeholder = { Text("Поиск мероприятий") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp)
@@ -96,14 +105,14 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                     label = label,
                     selected = state.selectedFilter == label
                 ) {
-                    presenter.onFilterSelected(label)
+                    viewModel.onFilterSelected(label)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        val favoriteEvents = state.allEvents.filter { it.isFavorite }
+        val favoriteEvents = state.filteredEvents.filter { it.isFavorite }
 
         Text("Избранные мероприятия", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
@@ -120,7 +129,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                     }
 
                     EventCard(title = event.title, painter = painter) {
-                        presenter.onEventClick(event)
+                        viewModel.onEventClick(event)
                     }
                 }
             }
@@ -131,11 +140,11 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
         Text("Ваши активности", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (state.allEvents.isEmpty()) {
-            Text("Нет мероприятий по выбранному фильтру.")
+        if (state.filteredEvents.isEmpty()) {
+            Text("Вы пока не присоединились ни к одному мероприятию.")
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(state.allEvents) { event ->
+                items(state.filteredEvents) { event ->
                     val painter = if (!event.imageUri.isNullOrBlank()) {
                         rememberAsyncImagePainter(Uri.parse(event.imageUri))
                     } else {
@@ -147,8 +156,8 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                         subtitle = event.dateTime,
                         isFavorite = event.isFavorite,
                         painter = painter,
-                        onFavoriteClick = { presenter.onFavoriteToggle(event) },
-                        onClick = { presenter.onEventClick(event) }
+                        onFavoriteClick = { viewModel.onFavoriteToggle(event) },
+                        onClick = { viewModel.onEventClick(event) }
                     )
                 }
             }
@@ -156,9 +165,9 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
 
         selectedEvent?.let { event ->
             AlertDialog(
-                onDismissRequest = { presenter.onDialogClose() },
+                onDismissRequest = viewModel::onDialogClose,
                 confirmButton = {
-                    TextButton(onClick = { presenter.onDialogClose() }) {
+                    TextButton(onClick = viewModel::onDialogClose) {
                         Text("Закрыть")
                     }
                 },
@@ -173,5 +182,19 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                 }
             )
         }
+    }
+}
+
+class HomeViewModelFactory(
+    private val application: Application,
+    private val eventDao: EventDao,
+    private val userDao: UserDao
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return HomeViewModel(eventDao, userDao, application) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

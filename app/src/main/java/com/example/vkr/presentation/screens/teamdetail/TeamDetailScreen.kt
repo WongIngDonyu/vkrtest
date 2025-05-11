@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
@@ -31,6 +32,7 @@ import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.session.UserSessionManager
+import com.example.vkr.ui.components.DateTimeUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -39,43 +41,16 @@ import java.util.Locale
 
 @Composable
 fun TeamDetailScreen(teamId: Int, navController: NavController) {
-    val context = LocalContext.current
-    val database = AppDatabase.getInstance(context)
+    val viewModel: TeamDetailViewModel = viewModel()
+    val team = viewModel.team
+    val users = viewModel.users
+    val events = viewModel.events
+    val currentUser = viewModel.currentUser
+    val selectedEvent = viewModel.selectedEvent
 
-    val viewModelState = remember { mutableStateOf(TeamDetailContract.ViewState()) }
-
-    val view = remember {
-        object : TeamDetailContract.View {
-            override fun updateState(state: TeamDetailContract.ViewState) {
-                viewModelState.value = state
-            }
-
-            override fun navigateToManageEvent(eventId: Int) {
-                navController.navigate("manageEvent/$eventId")
-            }
-
-            override fun goBack() {
-                navController.popBackStack()
-            }
-        }
+    LaunchedEffect(teamId) {
+        viewModel.loadTeam(teamId)
     }
-
-    val presenter = remember {
-        TeamDetailPresenter(
-            view = view,
-            teamDao = database.teamDao(),
-            userDao = database.userDao(),
-            eventDao = database.eventDao(),
-            session = UserSessionManager(context)
-        )
-    }
-
-    LaunchedEffect(Unit) {
-        presenter.onInit(teamId)
-    }
-
-    val state = viewModelState.value
-    val team = state.team
 
     team?.let { t ->
         Column(
@@ -84,6 +59,7 @@ fun TeamDetailScreen(teamId: Int, navController: NavController) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            // Header
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -97,37 +73,33 @@ fun TeamDetailScreen(teamId: Int, navController: NavController) {
                     modifier = Modifier.matchParentSize()
                 )
                 Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
+                    modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.4f))
                 )
                 Text(
                     text = t.name,
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(12.dp)
+                    modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
                 )
                 Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(12.dp)
+                    modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
                 ) {
                     Text("Очки: ${t.points}", color = Color.White, fontWeight = FontWeight.SemiBold)
-                    Text("Проведено мероприятий: ${state.events.size}", color = Color.White)
+                    Text("Проведено мероприятий: ${events.size}", color = Color.White)
                 }
             }
 
             Spacer(Modifier.height(16.dp))
+
+            // Users
             Text("Участники команды", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
 
-            if (state.users.isEmpty()) {
+            if (users.isEmpty()) {
                 Text("Пока нет участников", style = MaterialTheme.typography.bodyMedium)
             } else {
-                val pages = state.users.chunked(4)
+                val pages = users.chunked(4)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(pages) { pageUsers ->
                         Column(
@@ -152,9 +124,7 @@ fun TeamDetailScreen(teamId: Int, navController: NavController) {
                                                 Image(
                                                     painter = rememberAsyncImagePainter(user.avatarUri),
                                                     contentDescription = null,
-                                                    modifier = Modifier
-                                                        .size(24.dp)
-                                                        .clip(CircleShape)
+                                                    modifier = Modifier.size(24.dp).clip(CircleShape)
                                                 )
                                             } else {
                                                 Icon(
@@ -175,19 +145,27 @@ fun TeamDetailScreen(teamId: Int, navController: NavController) {
             }
 
             Spacer(Modifier.height(24.dp))
+
+            // Events
             Text("Мероприятия команды", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
 
-            if (state.events.isEmpty()) {
+            if (events.isEmpty()) {
                 Text("Пока нет мероприятий", style = MaterialTheme.typography.bodyMedium)
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(state.events.sortedBy { it.isFinished }) { event ->
+                    items(events.sortedBy { it.isFinished }) { event ->
                         ElevatedCard(
                             modifier = Modifier
                                 .width(220.dp)
                                 .wrapContentHeight()
-                                .clickable { presenter.onEventClicked(event.id) },
+                                .clickable {
+                                    if (event.creatorId == currentUser?.id) {
+                                        navController.navigate("manageEvent/${event.id}")
+                                    } else {
+                                        viewModel.selectEvent(event)
+                                    }
+                                },
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.elevatedCardColors(
                                 containerColor = if (event.isFinished) Color(0xFFE0E0E0) else MaterialTheme.colorScheme.surface
@@ -219,8 +197,9 @@ fun TeamDetailScreen(teamId: Int, navController: NavController) {
 
                                 Spacer(Modifier.height(12.dp))
                                 Text(event.title, fontWeight = FontWeight.Medium)
-                                Text(formatDate(event.dateTime), color = Color.Gray)
-
+                                val parsed = DateTimeUtils.parseDisplayFormatted(event.dateTime)
+                                val formatted = parsed?.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))) ?: ""
+                                Text(formatted, color = Color.Gray)
                                 if (event.isFinished) {
                                     Spacer(Modifier.height(4.dp))
                                     Text("Завершено", color = Color.Red, fontWeight = FontWeight.Bold)
@@ -233,14 +212,15 @@ fun TeamDetailScreen(teamId: Int, navController: NavController) {
 
             Spacer(Modifier.height(24.dp))
 
+            // Buttons
             when {
-                state.currentUser?.teamId == teamId -> {
-                    OutlinedButton(onClick = { presenter.onLeaveTeam() }, modifier = Modifier.fillMaxWidth()) {
+                currentUser?.teamId == teamId -> {
+                    OutlinedButton(onClick = { viewModel.leaveTeam() }, modifier = Modifier.fillMaxWidth()) {
                         Text("Покинуть команду")
                     }
                 }
-                state.currentUser?.teamId == null -> {
-                    Button(onClick = { presenter.onJoinTeam() }, modifier = Modifier.fillMaxWidth()) {
+                currentUser?.teamId == null -> {
+                    Button(onClick = { viewModel.joinTeam() }, modifier = Modifier.fillMaxWidth()) {
                         Text("Вступить в команду")
                     }
                 }
@@ -255,18 +235,31 @@ fun TeamDetailScreen(teamId: Int, navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
-            OutlinedButton(onClick = { presenter.onBackClicked() }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = { navController.popBackStack() }, modifier = Modifier.fillMaxWidth()) {
                 Text("Назад")
             }
         }
     }
-}
 
-fun formatDate(dateTime: String): String {
-    return try {
-        val parsed = LocalDateTime.parse(dateTime)
-        parsed.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")))
-    } catch (e: Exception) {
-        ""
+    // Dialog for non-creators
+    selectedEvent?.let { event ->
+        AlertDialog(
+            onDismissRequest = viewModel::onDialogClose,
+            confirmButton = {
+                TextButton(onClick = viewModel::onDialogClose) {
+                    Text("Закрыть")
+                }
+            },
+            title = { Text(event.title, style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Column {
+                    Text("📍 ${event.locationName}")
+                    Text("🗓 ${event.dateTime}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(event.description)
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
     }
 }

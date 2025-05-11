@@ -1,5 +1,7 @@
 package com.example.vkr.presentation.screens.splash
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,34 +14,53 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.vkr.data.session.UserSessionManager
+import android.Manifest
 
 @Composable
 fun SplashScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val view = remember {
-        object : SplashContract.View {
-            override fun navigateToMain() {
+    val viewModel: SplashViewModel = viewModel()
+    val navigation = viewModel.shouldNavigate
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        // Здесь можно что-то логировать или обработать, если нужно
+    }
+
+    // ⚠️ Запросим разрешения сразу при входе
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    // Навигация
+    LaunchedEffect(navigation) {
+        when (navigation) {
+            SplashViewModel.NavigationTarget.Main -> {
                 navController.navigate("main") {
                     popUpTo("auth") { inclusive = true }
                 }
             }
-
-            override fun navigateToAuth() {
+            SplashViewModel.NavigationTarget.Auth -> {
                 navController.navigate("auth") {
                     popUpTo(0)
                 }
             }
+            null -> {} // Ждём
         }
     }
 
-    val presenter = remember { SplashPresenter(view, UserSessionManager(context)) }
-
-    LaunchedEffect(Unit) {
-        presenter.checkSession()
-    }
-
+    // UI
     Box(
         modifier = Modifier
             .fillMaxSize()

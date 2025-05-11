@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,34 +49,17 @@ fun LoginScreen(navController: NavController) {
     val userDao = remember { AppDatabase.getInstance(context).userDao() }
     val session = remember { UserSessionManager(context) }
 
-    var phone by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
+    val viewModel = remember { LoginViewModel(session, userDao) }
 
-    var phoneError by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf(false) }
-    var loginError by remember { mutableStateOf(false) }
-
-    val view = remember {
-        object : LoginContract.View {
-            override fun showValidationErrors(phoneErr: Boolean, passErr: Boolean) {
-                phoneError = phoneErr
-                passwordError = passErr
+    // Навигация при успешном входе
+    LaunchedEffect(viewModel.navigateToHome) {
+        if (viewModel.navigateToHome) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
             }
-
-            override fun showLoginError() {
-                loginError = true
-            }
-
-            override fun navigateToHome() {
-                navController.navigate("home") {
-                    popUpTo("login") { inclusive = true }
-                }
-            }
+            viewModel.onNavigationHandled()
         }
     }
-
-    val presenter = remember { LoginPresenter(view, session, userDao) }
 
     Column(
         modifier = Modifier
@@ -88,49 +72,39 @@ fun LoginScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
-            value = phone,
-            onValueChange = {
-                phone = it
-                phoneError = false
-                loginError = false
-            },
+            value = viewModel.phone,
+            onValueChange = viewModel::onPhoneChange,
             label = { Text("Телефон") },
-            isError = phoneError || loginError,
+            isError = viewModel.phoneError || viewModel.loginError,
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth()
         )
-        if (phoneError) Text("Введите корректный номер", color = Color.Red)
+        if (viewModel.phoneError) Text("Введите корректный номер", color = Color.Red)
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                passwordError = false
-                loginError = false
-            },
+            value = viewModel.password,
+            onValueChange = viewModel::onPasswordChange,
             label = { Text("Пароль") },
-            isError = passwordError || loginError,
+            isError = viewModel.passwordError || viewModel.loginError,
             singleLine = true,
-            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (viewModel.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                IconButton(onClick = viewModel::togglePasswordVisibility) {
                     Icon(Icons.Default.Visibility, contentDescription = "Показать пароль")
                 }
             },
             modifier = Modifier.fillMaxWidth()
         )
-        if (passwordError) Text("Пароль не может быть пустым", color = Color.Red)
-        if (loginError) Text("Неверный номер телефона или пароль", color = Color.Red)
+        if (viewModel.passwordError) Text("Пароль не может быть пустым", color = Color.Red)
+        if (viewModel.loginError) Text("Неверный номер телефона или пароль", color = Color.Red)
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = {
-                presenter.onLoginClicked(phone, password)
-            },
+            onClick = viewModel::onLoginClick,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF))
         ) {
