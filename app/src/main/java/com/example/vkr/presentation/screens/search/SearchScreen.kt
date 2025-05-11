@@ -1,0 +1,193 @@
+package com.example.vkr.presentation.screens.search
+
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavController
+import com.example.vkr.data.AppDatabase
+import com.example.vkr.data.model.TeamEntity
+import com.example.vkr.ui.components.rememberMapViewWithLifecycle
+import com.yandex.mapkit.geometry.LinearRing
+import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.geometry.Polygon
+import com.yandex.mapkit.map.CameraPosition
+import com.example.vkr.ui.components.*
+import com.yandex.mapkit.map.InputListener
+import com.yandex.mapkit.map.Map
+import com.yandex.mapkit.map.PolygonMapObject
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun SearchScreen(navController: NavController) {
+    val context = LocalContext.current
+    val mapView = rememberMapViewWithLifecycle()
+    val teamDao = remember { AppDatabase.getInstance(context).teamDao() }
+
+    var state by remember { mutableStateOf(SearchContract.ViewState()) }
+
+    val view = remember {
+        object : SearchContract.View {
+            override fun updateState(newState: SearchContract.ViewState) {
+                state = newState
+            }
+
+            override fun navigateToTeamDetail(teamId: Int) {
+                navController.navigate("teamDetail/$teamId")
+            }
+        }
+    }
+
+    val presenter = remember { SearchPresenter(view, teamDao) }
+
+    LaunchedEffect(Unit) {
+        presenter.onInit()
+    }
+
+    val teamAreas = state.teams.map { entity ->
+        val points = parsePoints(entity.areaPoints)
+        TeamArea(
+            teamId = entity.id,
+            teamName = entity.name,
+            points = points,
+            color = entity.color
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (teamAreas.isNotEmpty()) {
+            AndroidView(
+                factory = {
+                    mapView.map.move(
+                        CameraPosition(
+                            Point(55.529338019374315, 37.51481091362802),
+                            16.0f,
+                            0.0f,
+                            0.0f
+                        )
+                    )
+                    mapView.map.isZoomGesturesEnabled = false
+                    mapView.map.isScrollGesturesEnabled = true
+                    mapView.map.isRotateGesturesEnabled = false
+                    mapView.map.isTiltGesturesEnabled = false
+
+                    val mapObjects = mapView.map.mapObjects
+                    mapObjects.clear()
+
+                    val polygons = mutableMapOf<PolygonMapObject, TeamArea>()
+
+                    teamAreas.forEach { area ->
+                        if (area.points.size >= 3) {
+                            val polygon = Polygon(LinearRing(area.points), emptyList())
+                            val obj = mapObjects.addPolygon(polygon)
+                            obj.fillColor = if (area.color != 0) area.color else 0x5500FF00
+                            obj.strokeColor = Color.Black.toArgb()
+                            obj.strokeWidth = 2f
+
+                            polygons[obj] = area
+
+                            val center = getPolygonCenter(area.points)
+                            val label = mapObjects.addPlacemark(center)
+                            label.setText(area.teamName)
+                        }
+                    }
+
+                    mapView.map.addInputListener(object : InputListener {
+                        override fun onMapTap(map: Map, point: Point) {
+                            for ((polygon, area) in polygons) {
+                                if (isPointInsidePolygon(polygon.geometry.outerRing.points, point)) {
+                                    presenter.onTeamClicked(area.teamId)
+                                    break
+                                }
+                            }
+                        }
+
+                        override fun onMapLongTap(map: Map, point: Point) {}
+                    })
+
+                    mapView
+                },
+                modifier = Modifier.matchParentSize()
+            )
+        }
+
+        if (state.teams.isNotEmpty()) {
+            val topTeams = state.teams.sortedByDescending { it.points }.take(3)
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 24.dp)
+                    .clickable { presenter.onShowDialog() }
+                    .background(Color.Black.copy(alpha = 0.4f), shape = RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .widthIn(max = 200.dp)
+            ) {
+                Text(
+                    text = "Рейтинг команд",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                topTeams.forEachIndexed { index, team ->
+                    Text(
+                        text = "${index + 1}. ${team.name} — ${team.points} очков",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+    }
+
+    if (state.showDialog) {
+        AlertDialog(
+            onDismissRequest = { presenter.onHideDialog() },
+            confirmButton = {
+                TextButton(onClick = { presenter.onHideDialog() }) {
+                    Text("Закрыть")
+                }
+            },
+            title = { Text("Полный рейтинг команд") },
+            text = {
+                Column {
+                    state.teams.sortedByDescending { it.points }.forEachIndexed { index, team ->
+                        Text(
+                            text = "${index + 1}. ${team.name} — ${team.points} очков",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        )
+    }
+}
