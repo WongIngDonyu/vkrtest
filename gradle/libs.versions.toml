@@ -1,6 +1,7 @@
 [versions]
 agp = "8.6.0"
 coilCompose = "2.5.0"
+converterGson = "2.9.0"
 coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.5"
 datastorePreferencesVersion = "1.0.0"
@@ -18,6 +19,7 @@ materialIconsExtended = "1.7.8"
 navigationCompose = "2.8.9"
 animationCoreLint = "1.8.0-rc03"
 playServicesGames = "23.2.0"
+retrofit = "2.9.0"
 roomRuntime = "2.7.1"
 compose-compiler = "2.1.0"
 firebaseCrashlyticsBuildtools = "3.0.3"
@@ -32,6 +34,7 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -50,6 +53,7 @@ androidx-animation-core-lint = { group = "androidx.compose.animation", name = "a
 material = { module = "com.google.android.material:material", version.ref = "material" }
 play-services-games = { group = "com.google.android.gms", name = "play-services-games", version.ref = "playServicesGames" }
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -80,4 +80,6 @@ dependencies {
     implementation (libs.gson)
     implementation (libs.material)
     implementation (libs.androidx.core.splashscreen)
+    implementation (libs.retrofit)
+    implementation (libs.converter.gson)
 }

@@ -6,17 +6,21 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.dao.UserDao
+import com.example.vkr.data.model.UserDTO
 import com.example.vkr.data.model.UserEntity
+import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
-class SignUpViewModel(private val userDao: UserDao) : ViewModel() {
+class SignUpViewModel : ViewModel() {
+
+    private val repository = AuthRepository(RetrofitInstance.api)
 
     var name by mutableStateOf("")
     var nickname by mutableStateOf("")
     var phone by mutableStateOf("")
     var password by mutableStateOf("")
     var confirmPassword by mutableStateOf("")
-    var selectedRole by mutableStateOf("")
     var isPasswordVisible by mutableStateOf(false)
 
     var nameError by mutableStateOf(false)
@@ -38,22 +42,24 @@ class SignUpViewModel(private val userDao: UserDao) : ViewModel() {
         passwordError = password.isBlank()
         confirmPasswordError = password != confirmPassword
 
-        if (listOf(
-                nameError, nicknameError, phoneError,
-                passwordError, confirmPasswordError
-            ).any { it }) return
+        if (listOf(nameError, nicknameError, phoneError, passwordError, confirmPasswordError).any { it }) return
 
-        val user = UserEntity(
-            name = name,
-            nickname = nickname,
-            phone = phone,
-            password = password,
-            role = "user"
-        )
+        val user = UserDTO(name, nickname, phone, password)
 
         viewModelScope.launch {
-            userDao.insertUser(user)
-            navigateToLogin = true
+            try {
+                val response = repository.register(user)
+                if (response.isSuccessful) {
+                    val message = response.body()?.string() ?: "Успешно"
+                    println("Ответ от сервера: $message")
+                    navigateToLogin = true
+                } else {
+                    val errorText = response.errorBody()?.string()
+                    println("Ошибка регистрации: $errorText")
+                }
+            } catch (e: Exception) {
+                println("Ошибка подключения: ${e.localizedMessage}")
+            }
         }
     }
 

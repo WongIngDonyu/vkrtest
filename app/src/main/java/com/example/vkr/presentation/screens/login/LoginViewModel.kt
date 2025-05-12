@@ -7,6 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.dao.UserDao
 import com.example.vkr.data.model.UserAchievementCrossRef
+import com.example.vkr.data.model.UserLoginDTO
+import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.AuthRepository
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.launch
 
@@ -51,14 +54,21 @@ class LoginViewModel(
         if (!isPhoneValid || !isPasswordValid) return
 
         viewModelScope.launch {
-            val user = userDao.getUserByPhone(phone)
+            try {
+                val response = AuthRepository(RetrofitInstance.api).login(UserLoginDTO(phone, password))
 
-            if (user != null && user.password == password) {
-                session.saveUser(user.phone, user.role)
-                userDao.insertUserAchievementCrossRef(UserAchievementCrossRef(user.id, 1))
-                userDao.insertUserAchievementCrossRef(UserAchievementCrossRef(user.id, 2))
-                navigateToHome = true
-            } else {
+                if (response.isSuccessful) {
+                    session.saveUser(phone, "USER") // Пока роль "USER", можно доработать позже
+                    navigateToHome = true
+                } else if (response.code() == 401) {
+                    loginError = true
+                } else {
+                    println("Ошибка авторизации: ${response.errorBody()?.string()}")
+                    loginError = true
+                }
+
+            } catch (e: Exception) {
+                println("Ошибка подключения: ${e.localizedMessage}")
                 loginError = true
             }
         }

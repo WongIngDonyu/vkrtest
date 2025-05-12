@@ -44,9 +44,7 @@ import com.example.vkr.presentation.screens.signup.SignUpViewModel
 
 @Composable
 fun SignUpScreen(navController: NavController) {
-    val context = LocalContext.current
-    val userDao = remember { AppDatabase.getInstance(context).userDao() }
-    val viewModel = remember { SignUpViewModel(userDao) }
+    val viewModel = remember { SignUpViewModel() }
 
     LaunchedEffect(viewModel.navigateToLogin) {
         if (viewModel.navigateToLogin) {
