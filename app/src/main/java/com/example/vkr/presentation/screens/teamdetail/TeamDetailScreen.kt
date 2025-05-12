@@ -40,7 +40,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun TeamDetailScreen(teamId: Int, navController: NavController) {
+fun TeamDetailScreen(teamId: String, navController: NavController) {
     val viewModel: TeamDetailViewModel = viewModel()
     val team = viewModel.team
     val users = viewModel.users

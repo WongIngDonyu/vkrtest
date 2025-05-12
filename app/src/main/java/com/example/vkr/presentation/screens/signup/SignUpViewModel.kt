@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.dao.UserDao
+import com.example.vkr.data.model.RegisterDTO
 import com.example.vkr.data.model.UserDTO
 import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.remote.RetrofitInstance
@@ -44,7 +45,7 @@ class SignUpViewModel : ViewModel() {
 
         if (listOf(nameError, nicknameError, phoneError, passwordError, confirmPasswordError).any { it }) return
 
-        val user = UserDTO(name, nickname, phone, password)
+        val user = RegisterDTO(name, nickname, phone, password)
 
         viewModelScope.launch {
             try {

@@ -7,7 +7,7 @@ import com.yandex.mapkit.geometry.Polygon
 import com.yandex.mapkit.geometry.LinearRing
 
 data class TeamArea(
-    val teamId: Int,
+    val teamId: String,
     val teamName: String,
     val points: List<Point>,
     val color: Int

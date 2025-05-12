@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.dao.UserDao
 import com.example.vkr.data.model.UserAchievementCrossRef
+import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.model.UserLoginDTO
 import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.repository.AuthRepository
@@ -55,15 +56,43 @@ class LoginViewModel(
 
         viewModelScope.launch {
             try {
-                val response = AuthRepository(RetrofitInstance.api).login(UserLoginDTO(phone, password))
+                val repository = AuthRepository(RetrofitInstance.api)
+                val loginResponse = repository.login(UserLoginDTO(phone, password))
 
-                if (response.isSuccessful) {
-                    session.saveUser(phone, "USER") // Пока роль "USER", можно доработать позже
-                    navigateToHome = true
-                } else if (response.code() == 401) {
+                if (loginResponse.isSuccessful) {
+                    // получаем полные данные пользователя
+                    val userResponse = repository.getUserByPhone(phone)
+
+                    if (userResponse.isSuccessful) {
+                        val user = userResponse.body()!!
+
+                        // сохраняем в Room
+                        val entity = UserEntity(
+                            id = user.id,
+                            name = user.name,
+                            nickname = user.nickname,
+                            phone = user.phone,
+                            role = user.role,
+                            points = user.points,
+                            eventCount = user.eventCount,
+                            avatarUri = user.avatarUri,
+                            teamId = user.teamId
+                        )
+                        userDao.insertUser(entity)
+
+                        // сохраняем только ключевые данные в сессию
+                        session.saveUser(user.phone, user.role)
+
+                        navigateToHome = true
+                    } else {
+                        println("Ошибка при получении данных пользователя: ${userResponse.errorBody()?.string()}")
+                        loginError = true
+                    }
+
+                } else if (loginResponse.code() == 401) {
                     loginError = true
                 } else {
-                    println("Ошибка авторизации: ${response.errorBody()?.string()}")
+                    println("Ошибка авторизации: ${loginResponse.errorBody()?.string()}")
                     loginError = true
                 }
 

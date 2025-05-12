@@ -36,7 +36,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun onTeamClicked(teamId: Int, navController: NavController) {
+    fun onTeamClicked(teamId: String, navController: NavController) {
         navController.navigate("teamDetail/$teamId")
     }
 

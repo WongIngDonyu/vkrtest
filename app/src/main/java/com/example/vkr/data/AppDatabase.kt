@@ -19,6 +19,7 @@ import com.example.vkr.data.dao.TeamDao
 import com.example.vkr.data.model.TeamEntity
 import com.google.gson.Gson
 import com.yandex.mapkit.geometry.Point
+import java.util.UUID
 
 @Database(
     entities = [
@@ -85,6 +86,7 @@ abstract class AppDatabase : RoomDatabase() {
     suspend fun populateInitialTeams() {
         val teams = listOf(
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Красные",
                 color = 0x66FF0000,
                 areaPoints = serializePoints(
@@ -107,6 +109,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Синие",
                 color = 0x660000FF,
                 areaPoints = serializePoints(
@@ -125,6 +128,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Зелёные",
                 color = 0x6600FF00,
                 areaPoints = serializePoints(
@@ -145,6 +149,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Жёлтые",
                 color = 0x66FFFF00,
                 areaPoints = serializePoints(
@@ -161,6 +166,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Фиолетовые",
                 color = 0x66FF00FF,
                 areaPoints = serializePoints(
@@ -175,6 +181,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Оранжевые",
                 color = 0x66FFA500,
                 areaPoints = serializePoints(
@@ -197,6 +204,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Бирюзовые",
                 color = 0x6600FFFF,
                 areaPoints = serializePoints(
@@ -218,6 +226,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Фиоловые",
                 color = 0x669933CC,
                 areaPoints = serializePoints(
@@ -236,6 +245,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             ),
             TeamEntity(
+                id = UUID.randomUUID().toString(),
                 name = "Салатовые",
                 color = 0x6699FF66,
                 areaPoints = serializePoints(

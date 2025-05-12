@@ -5,8 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "teams")
 data class TeamEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey val id: String, // <-- UUID
     val name: String,
     val color: Int, // Цвет команды
     val areaPoints: String, // Сериализованные координаты полигона

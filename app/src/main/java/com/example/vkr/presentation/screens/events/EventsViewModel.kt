@@ -26,8 +26,9 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     private val eventDao = AppDatabase.getInstance(context).eventDao()
     private val userDao = AppDatabase.getInstance(context).userDao()
     private val session = UserSessionManager(context)
+    private var userId: String? = null
 
-    val currentUserId: Int?
+    val currentUserId: String?
         get() = userId
 
     var allEvents by mutableStateOf<List<EventEntity>>(emptyList())
@@ -59,8 +60,6 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
 
     var filteredEvents by mutableStateOf<List<EventEntity>>(emptyList())
         private set
-
-    private var userId: Int? = null
 
     init {
         viewModelScope.launch {
@@ -94,7 +93,7 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
         selectedEvent = null
     }
 
-    fun joinEvent(eventId: Int, onSnackbar: (String) -> Unit) {
+    fun joinEvent(eventId: String, onSnackbar: (String) -> Unit) {
         if (userId == null) return
 
         viewModelScope.launch {
@@ -111,7 +110,7 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun leaveEvent(eventId: Int, onSnackbar: (String) -> Unit) {
+    fun leaveEvent(eventId: String, onSnackbar: (String) -> Unit) {
         if (userId == null) return
 
         viewModelScope.launch {

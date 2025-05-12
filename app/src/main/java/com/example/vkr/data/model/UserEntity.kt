@@ -15,14 +15,13 @@ import androidx.room.*
     indices = [Index("teamId")]
 )
 data class UserEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey val id: String, // <-- UUID
     val name: String,
     val nickname: String,
     val phone: String,
-    val password: String,
     val role: String,
     val points: Int = 0,
     val eventCount: Int = 0,
-    val teamId: Int? = null,
+    val teamId: String? = null,
     val avatarUri: String? = null // 👤 путь к изображению профиля
 )

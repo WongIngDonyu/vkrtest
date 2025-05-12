@@ -23,6 +23,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.UUID
 
 class CreateEventViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -81,7 +82,7 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
         state = state.copy(imageUri = uri)
     }
 
-    fun onTeamSelected(teamId: Int) {
+    fun onTeamSelected(teamId: String) {
         viewModelScope.launch {
             val team = teamDao.getAllTeams().firstOrNull { it.id == teamId }
             state = state.copy(
@@ -111,6 +112,7 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
             val imagePath = st.imageUri?.let { copyImageToInternalStorage(context, it) }
 
             val event = EventEntity(
+                id = UUID.randomUUID().toString(),
                 title = title,
                 description = st.description,
                 locationName = st.location,
@@ -118,12 +120,12 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                 longitude = 37.0,
                 dateTime = formattedDateTime,
                 creatorId = user.id,
-                teamId = st.selectedTeamId ?: user.teamId ?: 1,
+                teamId = (st.selectedTeamId ?: user.teamId)?.toString(),
                 imageUri = imagePath
             )
 
             val id = eventDao.insertEvent(event)
-            userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, id.toInt()))
+            userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, id.toString()))
             onSuccess()
         }
     }
@@ -139,7 +141,7 @@ data class CreateEventUiState(
     val showDatePicker: Boolean = false,
     val showTimePicker: Boolean = false,
     val titleError: Boolean = false,
-    val selectedTeamId: Int? = null,
+    val selectedTeamId: String? = null,
     val selectedTeamName: String? = null
 )
 

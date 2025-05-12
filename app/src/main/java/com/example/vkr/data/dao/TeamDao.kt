@@ -16,13 +16,13 @@ interface TeamDao {
     suspend fun getAllTeams(): List<TeamEntity>
 
     @Query("UPDATE users SET teamId = :teamId WHERE id = :userId")
-    suspend fun joinTeam(userId: Int, teamId: Int)
+    suspend fun joinTeam(userId: String, teamId: String)
 
     @Query("UPDATE users SET teamId = NULL WHERE id = :userId")
-    suspend fun leaveTeam(userId: Int)
+    suspend fun leaveTeam(userId: String)
 
     @Query("SELECT * FROM users WHERE teamId = :teamId")
-    suspend fun getUsersByTeam(teamId: Int): List<UserEntity>
+    suspend fun getUsersByTeam(teamId: String): List<UserEntity>
 
     @Query("SELECT * FROM teams WHERE id = :teamId")
     fun getTeamById(teamId: Int): Flow<TeamEntity?>

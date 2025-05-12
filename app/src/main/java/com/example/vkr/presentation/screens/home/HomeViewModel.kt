@@ -124,7 +124,7 @@ class HomeViewModel(
 data class HomeViewState(
     val allEvents: List<EventEntity> = emptyList(),
     val filteredEvents: List<EventEntity> = emptyList(),
-    val participantCounts: Map<Int, Int> = emptyMap(),
+    val participantCounts: Map<String, Int> = emptyMap(),
     val searchQuery: String = "",
     val selectedFilter: String = "Все"
 )

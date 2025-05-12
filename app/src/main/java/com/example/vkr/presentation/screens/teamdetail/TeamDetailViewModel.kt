@@ -41,7 +41,7 @@ class TeamDetailViewModel(
     var selectedEvent by mutableStateOf<EventEntity?>(null)
         private set
 
-    fun loadTeam(teamId: Int) {
+    fun loadTeam(teamId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val t = teamDao.getAllTeams().firstOrNull { it.id == teamId }
             val u = teamDao.getUsersByTeam(teamId)

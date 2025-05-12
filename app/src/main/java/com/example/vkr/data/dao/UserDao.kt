@@ -28,24 +28,24 @@ interface UserDao {
 
     @Transaction
     @Query("SELECT * FROM users WHERE id = :userId")
-    fun getUserWithEvents(userId: Int): Flow<UserWithEvents>
+    fun getUserWithEvents(userId: String): Flow<UserWithEvents>
 
     @Query("DELETE FROM UserEventCrossRef WHERE userId = :userId AND eventId = :eventId")
-    suspend fun deleteUserEventCrossRef(userId: Int, eventId: Int)
+    suspend fun deleteUserEventCrossRef(userId: String, eventId: String)
 
     @Transaction
     @Query("SELECT * FROM users WHERE id = :userId")
-    fun getUserWithAchievements(userId: Int): Flow<UserWithAchievements>
+    fun getUserWithAchievements(userId: String): Flow<UserWithAchievements>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUserAchievementCrossRef(crossRef: UserAchievementCrossRef)
 
     @Query("SELECT COUNT(*) FROM UserEventCrossRef WHERE eventId = :eventId")
-    suspend fun getUserCountForEvent(eventId: Int): Int
+    suspend fun getUserCountForEvent(eventId: String): Int
 
     @Transaction
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
-    suspend fun getUserWithEventsOnce(userId: Int): UserWithEvents?
+    suspend fun getUserWithEventsOnce(userId: String): UserWithEvents?
 
     @Transaction
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")

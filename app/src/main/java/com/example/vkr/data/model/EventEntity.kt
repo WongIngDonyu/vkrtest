@@ -16,16 +16,16 @@ import androidx.room.PrimaryKey
     ]
 )
 data class EventEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey val id: String, // <-- UUID
     val title: String,
     val description: String,
     val locationName: String,
     val latitude: Double,
     val longitude: Double,
     val dateTime: String,
-    val creatorId: Int,
+    val creatorId: String,
     val isFavorite: Boolean = false,
-    val teamId: Int? = null,
+    val teamId: String? = null,
     val imageUri: String? = null,
     val isFinished: Boolean = false // ✅ новое поле
 )

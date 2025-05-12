@@ -22,6 +22,6 @@ import androidx.room.ForeignKey
     ]
 )
 data class UserEventCrossRef(
-    val userId: Int,
-    val eventId: Int
+    val userId: String,
+    val eventId: String
 )

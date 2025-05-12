@@ -40,7 +40,7 @@ fun RootNavGraph(navController: NavHostController) {
             composable("editProfile") { EditProfileScreen(navController) }
             composable("create_event") { CreateEventScreen(navController) }
             composable("teamDetail/{teamId}") { backStackEntry ->
-                val teamId = backStackEntry.arguments?.getString("teamId")?.toIntOrNull()
+                val teamId = backStackEntry.arguments?.getString("teamId")
                 teamId?.let {
                     TeamDetailScreen(teamId = it, navController = navController)
                 }

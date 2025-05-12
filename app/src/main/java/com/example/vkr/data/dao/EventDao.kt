@@ -31,7 +31,7 @@ interface EventDao {
     fun getUserWithEvents(userId: Int): Flow<UserWithEvents?>
 
     @Query("SELECT * FROM events WHERE teamId = :teamId")
-    suspend fun getEventsByTeam(teamId: Int): List<EventEntity>
+    suspend fun getEventsByTeam(teamId: String): List<EventEntity>
 
     @Query("SELECT * FROM events")
     suspend fun getAllEventsOnce(): List<EventEntity>
