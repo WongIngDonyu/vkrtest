@@ -124,14 +124,6 @@ fun SignUpScreen(navController: NavController) {
         )
         if (viewModel.confirmPasswordError) Text("Пароли не совпадают", color = Color.Red)
 
-        Spacer(modifier = Modifier.height(12.dp))
-        RoleDropdown(
-            selectedRole = viewModel.selectedRole,
-            onRoleSelected = { viewModel.selectedRole = it },
-            isError = viewModel.roleError
-        )
-        if (viewModel.roleError) Text("Выберите роль", color = Color.Red)
-
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = viewModel::signUp,

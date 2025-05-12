@@ -24,8 +24,6 @@ class SignUpViewModel(private val userDao: UserDao) : ViewModel() {
     var phoneError by mutableStateOf(false)
     var passwordError by mutableStateOf(false)
     var confirmPasswordError by mutableStateOf(false)
-    var roleError by mutableStateOf(false)
-
     var navigateToLogin by mutableStateOf(false)
         private set
 
@@ -39,11 +37,10 @@ class SignUpViewModel(private val userDao: UserDao) : ViewModel() {
         phoneError = phone.isBlank() || !phone.matches(Regex("""\+?\d+"""))
         passwordError = password.isBlank()
         confirmPasswordError = password != confirmPassword
-        roleError = selectedRole.isBlank()
 
         if (listOf(
                 nameError, nicknameError, phoneError,
-                passwordError, confirmPasswordError, roleError
+                passwordError, confirmPasswordError
             ).any { it }) return
 
         val user = UserEntity(
@@ -51,7 +48,7 @@ class SignUpViewModel(private val userDao: UserDao) : ViewModel() {
             nickname = nickname,
             phone = phone,
             password = password,
-            role = selectedRole
+            role = "user"
         )
 
         viewModelScope.launch {
