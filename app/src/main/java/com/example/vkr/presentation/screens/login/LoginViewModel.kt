@@ -1,23 +1,29 @@
 package com.example.vkr.presentation.screens.login
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.dao.UserDao
 import com.example.vkr.data.model.UserAchievementCrossRef
 import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.model.UserLoginDTO
 import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.repository.AuthRepository
+import com.example.vkr.data.repository.TeamRepository
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
+    application: Application,
     private val session: UserSessionManager,
     private val userDao: UserDao
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     var phone by mutableStateOf("")
     var password by mutableStateOf("")
@@ -60,7 +66,6 @@ class LoginViewModel(
                 val loginResponse = repository.login(UserLoginDTO(phone, password))
 
                 if (loginResponse.isSuccessful) {
-                    // получаем полные данные пользователя
                     val userResponse = repository.getUserByPhone(phone)
 
                     if (userResponse.isSuccessful) {
@@ -80,7 +85,7 @@ class LoginViewModel(
                         )
                         userDao.insertUser(entity)
 
-                        // сохраняем только ключевые данные в сессию
+                        // сохраняем ключевые данные в сессию
                         session.saveUser(user.phone, user.role)
 
                         navigateToHome = true
@@ -105,5 +110,18 @@ class LoginViewModel(
 
     fun onNavigationHandled() {
         navigateToHome = false
+    }
+}
+
+class LoginViewModelFactory(
+    private val application: Application
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
+            val context = application.applicationContext
+            val db = AppDatabase.getInstance(context)
+            return LoginViewModel(application, UserSessionManager(context), db.userDao()) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

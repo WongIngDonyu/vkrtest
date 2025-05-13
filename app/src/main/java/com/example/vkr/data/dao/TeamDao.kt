@@ -2,6 +2,7 @@ package com.example.vkr.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
@@ -32,4 +33,10 @@ interface TeamDao {
 
     @Query("SELECT * FROM teams WHERE id = :teamId LIMIT 1")
     suspend fun getTeamByIdOnce(teamId: Int): TeamEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTeams(teams: List<TeamEntity>)
+
+    @Query("DELETE FROM teams")
+    suspend fun clearTeams()
 }

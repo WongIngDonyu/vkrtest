@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polygon
 import com.yandex.mapkit.geometry.LinearRing
+import org.json.JSONArray
 
 data class TeamArea(
     val teamId: String,
@@ -14,10 +15,17 @@ data class TeamArea(
 )
 
 fun parsePoints(json: String): List<Point> {
-    val gson = Gson()
-    val type = object : TypeToken<List<Map<String, Double>>>() {}.type
-    val rawPoints: List<Map<String, Double>> = gson.fromJson(json, type)
-    return rawPoints.map { Point(it["lat"]!!, it["lon"]!!) }
+    val jsonArray = JSONArray(json)
+    val points = mutableListOf<Point>()
+
+    for (i in 0 until jsonArray.length()) {
+        val pair = jsonArray.getJSONArray(i)
+        val latitude = pair.getDouble(0)
+        val longitude = pair.getDouble(1)
+        points.add(Point(latitude, longitude))
+    }
+
+    return points
 }
 
 fun getPolygonCenter(points: List<Point>): Point {

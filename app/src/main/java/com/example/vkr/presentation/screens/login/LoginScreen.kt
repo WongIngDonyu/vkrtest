@@ -1,5 +1,6 @@
 package com.example.vkr.presentation.screens.login
 
+import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.vkr.R
 import com.example.vkr.data.AppDatabase
@@ -46,10 +48,9 @@ import com.example.vkr.data.session.UserSessionManager
 @Composable
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
-    val userDao = remember { AppDatabase.getInstance(context).userDao() }
-    val session = remember { UserSessionManager(context) }
-
-    val viewModel = remember { LoginViewModel(session, userDao) }
+    val viewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(context.applicationContext as Application)
+    )
 
     // Навигация при успешном входе
     LaunchedEffect(viewModel.navigateToHome) {
