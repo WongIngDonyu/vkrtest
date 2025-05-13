@@ -15,7 +15,7 @@ interface EventDao {
     fun getAllEvents(): Flow<List<EventEntity>>
 
     @Query("SELECT * FROM events WHERE id = :eventId")
-    suspend fun getEventById(eventId: Int): EventEntity?
+    suspend fun getEventById(eventId: String): EventEntity?
 
     @Update
     suspend fun updateEvent(event: EventEntity)

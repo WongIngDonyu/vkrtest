@@ -4,6 +4,6 @@ import androidx.room.Entity
 
 @Entity(primaryKeys = ["userId", "achievementId"])
 data class UserAchievementCrossRef(
-    val userId: Int,
+    val userId: String,
     val achievementId: Int
 )

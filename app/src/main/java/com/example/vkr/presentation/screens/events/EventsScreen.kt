@@ -59,6 +59,10 @@ fun EventsScreen(
     val isOrganizer = viewModel.isOrganizer
     val scope = rememberCoroutineScope()
 
+    // 👇 Объединённый список участия
+    val allParticipantEvents = (joinedEvents + organizedEvents)
+        .distinctBy { it.id }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -106,25 +110,25 @@ fun EventsScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // 🔹 Все мероприятия
+        Text("Все мероприятия", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
         if (events.isNotEmpty()) {
-            Text("Все мероприятия", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(events) { event ->
                     val isJoined = joinedEvents.any { it.id == event.id }
                     val isUserOrganizer = organizedEvents.any { it.id == event.id }
                     val canJoin = !isJoined && event.creatorId != viewModel.currentUserId
 
-                    // 🔽 Создаём painter с заглушкой
                     val painter = if (!event.imageUri.isNullOrBlank()) {
                         rememberAsyncImagePainter(Uri.parse(event.imageUri))
                     } else {
-                        painterResource(id = R.drawable.testew) // 🔁 твоя заглушка
+                        painterResource(id = R.drawable.testew)
                     }
 
                     EventCardItem(
                         event = event,
-                        painter = painter, // 🔁 передаём painter явно
+                        painter = painter,
                         onClick = { viewModel.onEventClick(event) },
                         onJoin = {
                             viewModel.joinEvent(event.id) {
@@ -136,39 +140,71 @@ fun EventsScreen(
                     )
                 }
             }
+        } else {
+            Text(
+                text = "Нет мероприятий по выбранному фильтру",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
         }
 
-        if (joinedEvents.isNotEmpty()) {
-            Text("Вы участвуете", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-            joinedEvents.forEach { event ->
+        Spacer(Modifier.height(16.dp))
+
+        // 🔹 Вы участвуете
+        Text("Вы участвуете", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        if (allParticipantEvents.isNotEmpty()) {
+            allParticipantEvents.forEach { event ->
                 MyEventItem(
                     event = event,
                     onClick = { viewModel.onEventClick(event) },
                     onDelete = {
-                        viewModel.leaveEvent(event.id) {
-                            scope.launch { snackbarHostState.showSnackbar(it) }
+                        if (event.creatorId != viewModel.currentUserId) {
+                            viewModel.leaveEvent(event.id) {
+                                scope.launch { snackbarHostState.showSnackbar(it) }
+                            }
                         }
                     }
                 )
                 Spacer(Modifier.height(8.dp))
             }
+        } else {
+            Text(
+                text = "Вы пока не участвуете в мероприятиях",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
         }
 
-        if (organizedEvents.isNotEmpty()) {
+        Spacer(Modifier.height(16.dp))
+
+        // 🔹 Твои мероприятия (только для организатора)
+        if (isOrganizer) {
             Text("Твои мероприятия", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            organizedEvents.forEach { event ->
-                MyEventItem(
-                    event = event,
-                    onClick = { viewModel.onEventClick(event) },
-                    onDelete = null // нельзя выйти из своих мероприятий
+            if (organizedEvents.isNotEmpty()) {
+                organizedEvents.forEach { event ->
+                    MyEventItem(
+                        event = event,
+                        onClick = { viewModel.onEventClick(event) },
+                        onDelete = null // нельзя выйти из своих мероприятий
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+            } else {
+                Text(
+                    text = "У вас пока нет созданных мероприятий",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
-                Spacer(Modifier.height(8.dp))
             }
         }
     }
 
+    // 🔹 Диалог с описанием мероприятия
     selectedEvent?.let { event ->
         AlertDialog(
             onDismissRequest = viewModel::onDialogDismiss,
@@ -193,7 +229,6 @@ fun EventsScreen(
 
 
 
-
 @Composable
 fun EventCardItem(
     event: EventEntity,
@@ -204,13 +239,11 @@ fun EventCardItem(
     modifier: Modifier = Modifier
 ) {
     val isFinished = event.isFinished
-    val backgroundColor = if (isFinished) Color(0xFFE0E0E0) else Color.White
     val textColor = if (isFinished) Color.Gray else Color.Unspecified
 
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(backgroundColor)
             .clickable(enabled = !isFinished) { onClick() }
             .padding(8.dp)
     ) {

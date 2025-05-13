@@ -46,10 +46,8 @@ fun RootNavGraph(navController: NavHostController) {
                 }
             }
             composable("manageEvent/{eventId}") { backStackEntry ->
-                val eventId = backStackEntry.arguments?.getString("eventId")?.toIntOrNull()
-                if (eventId != null) {
-                    ManageEventScreen(eventId, navController)
-                }
+                val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+                ManageEventScreen(eventId, navController)
             }
         }
     }

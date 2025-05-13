@@ -41,7 +41,6 @@ fun MyEventItem(
     val isFinished = event.isFinished
     val titleColor = if (isFinished) Color.Gray else Color.Unspecified
     val dateColor = if (isFinished) Color.LightGray else Color.Gray
-    val backgroundColor = if (isFinished) Color(0xFFF0F0F0) else Color.White
 
     // 🔽 Выбор изображения
     val painter = if (!event.imageUri.isNullOrBlank()) {
@@ -53,7 +52,6 @@ fun MyEventItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(backgroundColor)
             .clickable(enabled = !isFinished) { onClick() }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically

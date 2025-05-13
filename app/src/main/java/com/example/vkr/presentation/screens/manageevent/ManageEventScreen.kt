@@ -42,7 +42,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun ManageEventScreen(eventId: Int, navController: NavController) {
+fun ManageEventScreen(eventId: String, navController: NavController) {
     val context = LocalContext.current
     val viewModel: ManageEventViewModel = viewModel()
 

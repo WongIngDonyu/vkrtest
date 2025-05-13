@@ -40,6 +40,9 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUserAchievementCrossRef(crossRef: UserAchievementCrossRef)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUserAchievementCrossRefs(crossRefs: List<UserAchievementCrossRef>)
+
     @Query("SELECT COUNT(*) FROM user_event_cross_ref WHERE eventId = :eventId")
     suspend fun getUserCountForEvent(eventId: String): Int
 

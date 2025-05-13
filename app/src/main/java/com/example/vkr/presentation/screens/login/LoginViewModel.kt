@@ -84,7 +84,11 @@ class LoginViewModel(
                             teamId = user.teamId
                         )
                         userDao.insertUser(entity)
-
+                        val achievementRefs = listOf(
+                            UserAchievementCrossRef(user.id, 1),
+                            UserAchievementCrossRef(user.id, 2)
+                        )
+                        userDao.insertUserAchievementCrossRefs(achievementRefs)
                         // сохраняем ключевые данные в сессию
                         session.saveUser(user.phone, user.role)
 
