@@ -55,7 +55,7 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
             BottomNavigationBar(navController = navController, currentRoute = currentRoute)
         },
         floatingActionButton = {
-            if (currentRoute == "events" && role == "Организатор") {
+            if (currentRoute == "events" && role == "ORGANIZER") {
                 FloatingActionButton(
                     onClick = { navController.navigate("create_event") },
                     containerColor = Color(0xFF7A5EFF),

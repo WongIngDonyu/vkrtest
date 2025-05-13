@@ -11,8 +11,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.AppDatabase
+import com.example.vkr.data.model.EventDTO
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.UserEventCrossRef
+import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.ui.components.DateTimeUtils
 import com.example.vkr.ui.components.copyImageToInternalStorage
@@ -111,8 +113,9 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
 
             val imagePath = st.imageUri?.let { copyImageToInternalStorage(context, it) }
 
-            val event = EventEntity(
-                id = UUID.randomUUID().toString(),
+            val id = UUID.randomUUID().toString()
+            val entity = EventEntity(
+                id = id,
                 title = title,
                 description = st.description,
                 locationName = st.location,
@@ -120,12 +123,37 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                 longitude = 37.0,
                 dateTime = formattedDateTime,
                 creatorId = user.id,
-                teamId = (st.selectedTeamId ?: user.teamId)?.toString(),
+                teamId = st.selectedTeamId ?: user.teamId,
                 imageUri = imagePath
             )
 
-            val id = eventDao.insertEvent(event)
-            userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, id.toString()))
+            // Сохраняем в локальную БД
+            eventDao.insertEvent(entity)
+            userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, id))
+
+            // Отправляем на сервер
+            val dto = EventDTO(
+                id = id,
+                title = entity.title,
+                description = entity.description,
+                locationName = entity.locationName,
+                latitude = entity.latitude,
+                longitude = entity.longitude,
+                dateTime = entity.dateTime,
+                creatorId = entity.creatorId,
+                teamId = entity.teamId,
+                imageUris = listOfNotNull(entity.imageUri)
+            )
+
+            try {
+                val response = RetrofitInstance.eventApi.createEvent(dto)
+                if (!response.isSuccessful) {
+                    println("❗ Ошибка при отправке события: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                println("❗ Ошибка подключения при отправке события: ${e.localizedMessage}")
+            }
+
             onSuccess()
         }
     }

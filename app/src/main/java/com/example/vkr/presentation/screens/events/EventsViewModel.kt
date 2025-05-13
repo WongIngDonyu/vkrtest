@@ -66,7 +66,7 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
             val phone = session.userPhone.firstOrNull()
             val user = phone?.let { userDao.getUserByPhone(it) }
             userId = user?.id
-            isOrganizer = user?.role == "Организатор"
+            isOrganizer = user?.role == "ORGANIZER"
 
             eventDao.getAllEvents().collect { events ->
                 allEvents = events
