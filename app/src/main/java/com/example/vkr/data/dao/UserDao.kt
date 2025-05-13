@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertUser(user: UserEntity)
 
     @Query("SELECT * FROM users WHERE phone = :phone LIMIT 1")
@@ -30,7 +30,7 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE id = :userId")
     fun getUserWithEvents(userId: String): Flow<UserWithEvents>
 
-    @Query("DELETE FROM UserEventCrossRef WHERE userId = :userId AND eventId = :eventId")
+    @Query("DELETE FROM user_event_cross_ref WHERE userId = :userId AND eventId = :eventId")
     suspend fun deleteUserEventCrossRef(userId: String, eventId: String)
 
     @Transaction
@@ -40,7 +40,7 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUserAchievementCrossRef(crossRef: UserAchievementCrossRef)
 
-    @Query("SELECT COUNT(*) FROM UserEventCrossRef WHERE eventId = :eventId")
+    @Query("SELECT COUNT(*) FROM user_event_cross_ref WHERE eventId = :eventId")
     suspend fun getUserCountForEvent(eventId: String): Int
 
     @Transaction
@@ -50,4 +50,7 @@ interface UserDao {
     @Transaction
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
     suspend fun getUserWithAchievementsOnce(userId: Int): UserWithAchievements?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUserEventCrossRefs(crossRefs: List<UserEventCrossRef>)
 }

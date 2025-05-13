@@ -4,8 +4,10 @@ import com.example.vkr.data.model.EventRequestDTO
 import com.example.vkr.data.model.EventResponseDTO
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface EventApi {
     @POST("/events")
@@ -13,4 +15,16 @@ interface EventApi {
 
     @GET("/events")
     suspend fun getAllEvents(): Response<List<EventResponseDTO>>
+
+    @POST("/events/{eventId}/join/{userId}")
+    suspend fun joinEvent(
+        @Path("eventId") eventId: String,
+        @Path("userId") userId: String
+    ): Response<Void>
+
+    @DELETE("/events/{eventId}/leave/{userId}")
+    suspend fun leaveEvent(
+        @Path("eventId") eventId: String,
+        @Path("userId") userId: String
+    ): Response<Void>
 }

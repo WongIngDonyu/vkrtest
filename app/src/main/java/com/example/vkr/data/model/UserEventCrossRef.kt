@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(
-    tableName = "userEventCrossRef",
+    tableName = "user_event_cross_ref",
     primaryKeys = ["userId", "eventId"],
     foreignKeys = [
         ForeignKey(

@@ -149,7 +149,7 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                         )
                         eventDao.insertEvent(localEvent)
                         userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, localEvent.id))
-                    }
+             }
                 } else {
                     println("❗ Ошибка при отправке события: ${response.errorBody()?.string()}")
                 }

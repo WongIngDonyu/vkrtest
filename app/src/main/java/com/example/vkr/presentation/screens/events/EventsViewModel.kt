@@ -12,6 +12,8 @@ import com.example.vkr.data.dao.EventDao
 import com.example.vkr.data.dao.UserDao
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.UserEventCrossRef
+import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.EventRepository
 import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.ui.components.DateTimeUtils
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +63,9 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     var filteredEvents by mutableStateOf<List<EventEntity>>(emptyList())
         private set
 
+    private val eventApi = RetrofitInstance.eventApi
+
+
     init {
         viewModelScope.launch {
             val phone = session.userPhone.firstOrNull()
@@ -98,15 +103,28 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
 
         viewModelScope.launch {
             val event = allEvents.find { it.id == eventId } ?: return@launch
+            val uid = userId!!
 
-            // Нельзя присоединиться к мероприятию, если ты его организатор или уже присоединился
-            if (event.creatorId == userId || myEvents.any { it.id == eventId }) return@launch
+            if (event.creatorId == uid || joinedEvents.any { it.id == eventId }) return@launch
 
-            userDao.insertUserEventCrossRef(UserEventCrossRef(userId!!, eventId))
-            onSnackbar("Вы присоединились к мероприятию!")
+            try {
+                val response = eventApi.joinEvent(eventId, uid)
+                if (response.isSuccessful || response.code() == 204) {
+                    // Добавляем локальную связь
+                    userDao.insertUserEventCrossRef(UserEventCrossRef(uid, eventId))
 
-            // Обновим события вручную, чтобы сразу отобразить изменения
-            applyFilters()
+                    // ✅ Обновляем joinedEvents
+                    joinedEvents = joinedEvents + event
+                    otherEvents = otherEvents - event
+
+                    onSnackbar("Вы присоединились к мероприятию!")
+                    applyFilters()
+                } else {
+                    onSnackbar("Ошибка: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onSnackbar("Ошибка подключения: ${e.localizedMessage}")
+            }
         }
     }
 
@@ -115,13 +133,28 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
 
         viewModelScope.launch {
             val event = allEvents.find { it.id == eventId } ?: return@launch
+            val uid = userId!!
 
-            // Организатор не может покинуть своё мероприятие или завершённое
-            if (event.creatorId == userId || event.isFinished) return@launch
+            if (event.creatorId == uid || event.isFinished) return@launch
 
-            userDao.deleteUserEventCrossRef(userId!!, eventId)
-            onSnackbar("Вы покинули мероприятие!")
-            applyFilters()
+            try {
+                val response = eventApi.leaveEvent(eventId, uid)
+                if (response.isSuccessful || response.code() == 204) {
+                    // Удаляем связь
+                    userDao.deleteUserEventCrossRef(uid, eventId)
+
+                    // ✅ Обновляем списки вручную
+                    joinedEvents = joinedEvents - event
+                    otherEvents = otherEvents + event
+
+                    onSnackbar("Вы покинули мероприятие!")
+                    applyFilters()
+                } else {
+                    onSnackbar("Ошибка: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onSnackbar("Ошибка подключения: ${e.localizedMessage}")
+            }
         }
     }
 
@@ -157,6 +190,36 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
             organizedEvents = filteredByTime.filter { it.creatorId == uid }
             otherEvents = filteredByTime.filter {
                 it.id !in userEventIds && it.creatorId != uid
+            }
+        }
+    }
+
+    private fun fetchEvents() {
+        viewModelScope.launch {
+            try {
+                val response = eventApi.getAllEvents()
+                if (response.isSuccessful) {
+                    val dtos = response.body() ?: emptyList()
+                    val entities = dtos.map {
+                        EventEntity(
+                            id = it.id,
+                            title = it.title,
+                            description = it.description,
+                            locationName = it.locationName,
+                            latitude = it.latitude,
+                            longitude = it.longitude,
+                            dateTime = it.dateTime,
+                            creatorId = it.creatorId,
+                            teamId = it.teamId,
+                            imageUri = it.imageUri.firstOrNull(),
+                            isFinished = it.finished
+                        )
+                    }
+                    eventDao.insertEvents(entities)
+                }
+                applyFilters()
+            } catch (e: Exception) {
+                println("❗ Ошибка получения событий: ${e.localizedMessage}")
             }
         }
     }

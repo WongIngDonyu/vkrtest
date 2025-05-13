@@ -23,7 +23,7 @@ interface EventDao {
     @Delete
     suspend fun deleteEvent(event: EventEntity)
 
-    @Query("DELETE FROM userEventCrossRef WHERE eventId = :eventId")
+    @Query("DELETE FROM user_event_cross_ref WHERE eventId = :eventId")
     suspend fun deleteCrossRefsForEvent(eventId: Int)
 
     @Transaction
@@ -36,6 +36,6 @@ interface EventDao {
     @Query("SELECT * FROM events")
     suspend fun getAllEventsOnce(): List<EventEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertEvents(events: List<EventEntity>) // <-- добавь это
 }
