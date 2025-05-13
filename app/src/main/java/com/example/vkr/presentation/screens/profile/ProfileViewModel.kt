@@ -13,6 +13,7 @@ import com.example.vkr.data.model.AchievementEntity
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
+import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -46,15 +47,15 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     init {
-        loadProfile()
+        loadProfileFromDb()
     }
 
-    private fun loadProfile() {
+    fun loadProfileFromDb() {
         viewModelScope.launch(Dispatchers.IO) {
             val phone = session.userPhone.firstOrNull() ?: return@launch
             val loadedUser = userDao.getUserByPhone(phone) ?: return@launch
-            val loadedAchievements = userDao.getUserWithAchievements(loadedUser.id).first().achievements
-            val loadedEvents = userDao.getUserWithEvents(loadedUser.id).first().events
+            val loadedAchievements = userDao.getUserWithAchievements(loadedUser.id).firstOrNull()?.achievements.orEmpty()
+            val loadedEvents = userDao.getUserWithEvents(loadedUser.id).firstOrNull()?.events.orEmpty()
             val loadedTeam = loadedUser.teamId?.let { teamId ->
                 teamDao.getAllTeams().firstOrNull { team -> team.id == teamId }
             }

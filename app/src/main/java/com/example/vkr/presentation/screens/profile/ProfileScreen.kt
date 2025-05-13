@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
 import com.example.vkr.data.AppDatabase
@@ -57,7 +58,17 @@ fun ProfileScreen(
     val events = viewModel.events
     val selectedEvent = viewModel.selectedEvent
     val selectedDateFilter = viewModel.selectedDateFilter
+    val currentBackStackEntry = navController.currentBackStackEntryAsState().value
 
+    LaunchedEffect(currentBackStackEntry) {
+        val shouldReload = currentBackStackEntry?.savedStateHandle?.get<Boolean>("reloadProfile") ?: false
+        if (shouldReload) {
+            viewModel.loadProfileFromDb()
+            if (currentBackStackEntry != null) {
+                currentBackStackEntry.savedStateHandle["reloadProfile"] = false
+            }
+        }
+    }
     val filteredEvents = events.filter { event ->
         val date = DateTimeUtils.parseDisplayFormatted(event.dateTime)
         when (selectedDateFilter) {

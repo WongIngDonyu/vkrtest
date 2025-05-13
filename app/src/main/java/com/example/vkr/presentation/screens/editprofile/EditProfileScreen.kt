@@ -117,14 +117,12 @@ fun EditProfileScreen(navController: NavController) {
 
         OutlinedTextField(
             value = viewModel.phone,
-            onValueChange = viewModel::onPhoneChange,
+            onValueChange = {}, // нельзя редактировать
             label = { Text("Телефон") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            isError = viewModel.phoneError,
+            readOnly = true,
+            enabled = false, // делает поле визуально "выключенным"
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.phoneError)
-            Text("Некорректный номер", color = Color.Red, fontSize = 12.sp)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -144,6 +142,10 @@ fun EditProfileScreen(navController: NavController) {
                 onClick = {
                     scope.launch {
                         viewModel.save {
+                            navController.previousBackStackEntry
+                                ?.savedStateHandle
+                                ?.set("reloadProfile", true)
+
                             navController.popBackStack()
                         }
                     }
