@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -114,8 +115,16 @@ fun EventsScreen(
                     val isUserOrganizer = organizedEvents.any { it.id == event.id }
                     val canJoin = !isJoined && event.creatorId != viewModel.currentUserId
 
+                    // 🔽 Создаём painter с заглушкой
+                    val painter = if (!event.imageUri.isNullOrBlank()) {
+                        rememberAsyncImagePainter(Uri.parse(event.imageUri))
+                    } else {
+                        painterResource(id = R.drawable.testew) // 🔁 твоя заглушка
+                    }
+
                     EventCardItem(
                         event = event,
+                        painter = painter, // 🔁 передаём painter явно
                         onClick = { viewModel.onEventClick(event) },
                         onJoin = {
                             viewModel.joinEvent(event.id) {
@@ -188,6 +197,7 @@ fun EventsScreen(
 @Composable
 fun EventCardItem(
     event: EventEntity,
+    painter: Painter, // 🔁 добавлено
     onClick: () -> Unit,
     onJoin: () -> Unit,
     showJoinButton: Boolean,
@@ -205,7 +215,7 @@ fun EventCardItem(
             .padding(8.dp)
     ) {
         Image(
-            painter = rememberAsyncImagePainter(event.imageUri ?: ""),
+            painter = painter, // 🔁 теперь используется готовый painter
             contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()

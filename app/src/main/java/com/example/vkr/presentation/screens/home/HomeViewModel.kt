@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.vkr.data.model.EventEntity
+import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.EventRepository
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
@@ -33,8 +35,20 @@ class HomeViewModel(
     var selectedEvent by mutableStateOf<EventEntity?>(null)
         private set
 
+    private val repository = EventRepository(
+        RetrofitInstance.eventApi,
+        eventDao
+    )
+
     init {
-        loadEvents()
+        viewModelScope.launch {
+            try {
+                repository.fetchAndSaveEvents()
+            } catch (e: Exception) {
+                println("❗ Ошибка получения событий с сервера: ${e.localizedMessage}")
+            }
+            loadEvents()
+        }
     }
 
     fun loadEvents() {

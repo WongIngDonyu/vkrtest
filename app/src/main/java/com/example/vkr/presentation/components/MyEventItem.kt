@@ -1,5 +1,6 @@
 package com.example.vkr.presentation.components
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,6 +43,13 @@ fun MyEventItem(
     val dateColor = if (isFinished) Color.LightGray else Color.Gray
     val backgroundColor = if (isFinished) Color(0xFFF0F0F0) else Color.White
 
+    // 🔽 Выбор изображения
+    val painter = if (!event.imageUri.isNullOrBlank()) {
+        rememberAsyncImagePainter(Uri.parse(event.imageUri))
+    } else {
+        painterResource(id = R.drawable.testew) // 👈 Заглушка
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,7 +59,7 @@ fun MyEventItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = rememberAsyncImagePainter(event.imageUri ?: ""),
+            painter = painter,
             contentDescription = null,
             modifier = Modifier
                 .size(56.dp)

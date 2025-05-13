@@ -1,27 +1,46 @@
 package com.example.vkr.data.remote
 
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
+
     private const val BASE_URL = "http://10.0.2.2:8080"
 
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY // Показывает тело запроса и ответа
     }
+
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .build()
 
     val api: AuthApi by lazy {
-        retrofit.create(AuthApi::class.java)
-    }
-
-    val teamApi: TeamApi by lazy {
-        retrofit.create(TeamApi::class.java)
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient) // 👈 подключаем клиент с логами
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(AuthApi::class.java)
     }
 
     val eventApi: EventApi by lazy {
-        retrofit.create(EventApi::class.java)
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient) // 👈 используем тот же логирующий клиент
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(EventApi::class.java)
+    }
+
+    val teamApi: TeamApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(TeamApi::class.java)
     }
 }

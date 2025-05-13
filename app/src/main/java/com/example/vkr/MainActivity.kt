@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-           // deleteDatabase("vkr_database")
+           //deleteDatabase("vkr_database")
 //        val session = UserSessionManager(applicationContext)
 //        lifecycleScope.launch {
 //            session.clearSession()

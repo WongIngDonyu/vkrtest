@@ -10,6 +10,6 @@ data class EventDTO(
     val dateTime: String,
     val creatorId: String,
     val teamId: String?,
-    val imageUris: List<String>,
+    val imageUri: List<String>, // ← исправить вот это
     val isFinished: Boolean = false
 )

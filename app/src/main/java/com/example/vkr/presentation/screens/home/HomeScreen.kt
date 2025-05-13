@@ -123,9 +123,9 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(favoriteEvents) { event ->
                     val painter = if (!event.imageUri.isNullOrBlank()) {
-                        rememberAsyncImagePainter(Uri.parse(event.imageUri))
+                        rememberAsyncImagePainter(event.imageUri)
                     } else {
-                        painterResource(id = R.drawable.images)
+                        painterResource(id = R.drawable.testew) // ✅ заглушка
                     }
 
                     EventCard(title = event.title, painter = painter) {
@@ -146,9 +146,9 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(state.filteredEvents) { event ->
                     val painter = if (!event.imageUri.isNullOrBlank()) {
-                        rememberAsyncImagePainter(Uri.parse(event.imageUri))
+                        rememberAsyncImagePainter(event.imageUri)
                     } else {
-                        painterResource(id = R.drawable.images)
+                        painterResource(id = R.drawable.testew) // ✅ заглушка
                     }
 
                     ActivityItem(
@@ -184,7 +184,6 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
         }
     }
 }
-
 class HomeViewModelFactory(
     private val application: Application,
     private val eventDao: EventDao,

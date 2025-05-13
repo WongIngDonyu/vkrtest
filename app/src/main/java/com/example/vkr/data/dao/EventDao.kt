@@ -35,4 +35,7 @@ interface EventDao {
 
     @Query("SELECT * FROM events")
     suspend fun getAllEventsOnce(): List<EventEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEvents(events: List<EventEntity>) // <-- добавь это
 }

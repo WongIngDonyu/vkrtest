@@ -142,7 +142,7 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                 dateTime = entity.dateTime,
                 creatorId = entity.creatorId,
                 teamId = entity.teamId,
-                imageUris = listOfNotNull(entity.imageUri)
+                imageUri = listOfNotNull(entity.imageUri)
             )
 
             try {
