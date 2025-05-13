@@ -26,7 +26,7 @@ interface TeamDao {
     suspend fun getUsersByTeam(teamId: String): List<UserEntity>
 
     @Query("SELECT * FROM teams WHERE id = :teamId")
-    fun getTeamById(teamId: Int): Flow<TeamEntity?>
+    fun getTeamById(teamId: String): Flow<TeamEntity?>
 
     @Query("SELECT * FROM teams")
     fun getAllTeamsFlow(): Flow<List<TeamEntity>>

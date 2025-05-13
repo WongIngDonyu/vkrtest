@@ -11,14 +11,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.AppDatabase
-import com.example.vkr.data.model.EventDTO
 import com.example.vkr.data.model.EventEntity
+import com.example.vkr.data.model.EventRequestDTO
 import com.example.vkr.data.model.UserEventCrossRef
 import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.ui.components.DateTimeUtils
 import com.example.vkr.ui.components.copyImageToInternalStorage
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -113,9 +114,10 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
 
             val imagePath = st.imageUri?.let { copyImageToInternalStorage(context, it) }
 
-            val id = UUID.randomUUID().toString()
-            val entity = EventEntity(
-                id = id,
+            val fallbackTeamId: String? = user.teamId
+            val finalTeamId = st.selectedTeamId ?: fallbackTeamId
+
+            val dto = EventRequestDTO(
                 title = title,
                 description = st.description,
                 locationName = st.location,
@@ -123,31 +125,32 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                 longitude = 37.0,
                 dateTime = formattedDateTime,
                 creatorId = user.id,
-                teamId = st.selectedTeamId ?: user.teamId,
-                imageUri = imagePath
-            )
-
-            // Сохраняем в локальную БД
-            eventDao.insertEvent(entity)
-            userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, id))
-
-            // Отправляем на сервер
-            val dto = EventDTO(
-                id = id,
-                title = entity.title,
-                description = entity.description,
-                locationName = entity.locationName,
-                latitude = entity.latitude,
-                longitude = entity.longitude,
-                dateTime = entity.dateTime,
-                creatorId = entity.creatorId,
-                teamId = entity.teamId,
-                imageUri = listOfNotNull(entity.imageUri)
+                teamId = finalTeamId, // ⬅ здесь ID
+                imageUri = listOfNotNull(imagePath)
             )
 
             try {
                 val response = RetrofitInstance.eventApi.createEvent(dto)
-                if (!response.isSuccessful) {
+                if (response.isSuccessful) {
+                    val serverEvent = response.body()
+                    if (serverEvent != null) {
+                        val localEvent = EventEntity(
+                            id = serverEvent.id,
+                            title = serverEvent.title,
+                            description = serverEvent.description,
+                            locationName = serverEvent.locationName,
+                            latitude = serverEvent.latitude,
+                            longitude = serverEvent.longitude,
+                            dateTime = serverEvent.dateTime,
+                            creatorId = serverEvent.creatorId,
+                            teamId = serverEvent.teamId, // ⬅ сохрани ID
+                            imageUri = serverEvent.imageUri.firstOrNull(),
+                            isFinished = serverEvent.finished
+                        )
+                        eventDao.insertEvent(localEvent)
+                        userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, localEvent.id))
+                    }
+                } else {
                     println("❗ Ошибка при отправке события: ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
@@ -158,7 +161,6 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 }
-
 data class CreateEventUiState(
     val title: String = "",
     val description: String = "",
