@@ -1,6 +1,7 @@
 package com.example.vkr.presentation.screens.teamdetail
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,6 +11,7 @@ import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
+import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -62,8 +64,18 @@ class TeamDetailViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val user = currentUser ?: return@launch
             val tid = team?.id ?: return@launch
-            teamDao.joinTeam(user.id, tid)
-            loadTeam(tid)
+
+            try {
+                val response = RetrofitInstance.teamApi.joinTeam(tid, user.id)
+                if (response.isSuccessful) {
+                    // Опционально обновляем локальные данные
+                    loadTeam(tid)
+                } else {
+                    Log.e("TeamJoin", "Failed to join team: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("TeamJoin", "Error joining team", e)
+            }
         }
     }
 
@@ -79,8 +91,18 @@ class TeamDetailViewModel(
     fun leaveTeam() {
         viewModelScope.launch(Dispatchers.IO) {
             val user = currentUser ?: return@launch
-            teamDao.leaveTeam(user.id)
-            team?.id?.let { loadTeam(it) }
+            val tid = team?.id ?: return@launch
+
+            try {
+                val response = RetrofitInstance.teamApi.leaveTeam(tid, user.id)
+                if (response.isSuccessful) {
+                    loadTeam(tid)
+                } else {
+                    Log.e("TeamLeave", "Failed to leave team: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("TeamLeave", "Error leaving team", e)
+            }
         }
     }
 }
