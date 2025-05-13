@@ -47,14 +47,46 @@ class TeamDetailViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val t = teamDao.getAllTeams().firstOrNull { it.id == teamId }
             val u = teamDao.getUsersByTeam(teamId)
-            val e = eventDao.getEventsByTeam(teamId)
             val phone = session.userPhone.firstOrNull()
             val current = phone?.let { userDao.getUserByPhone(it) }
+
+            val response = try {
+                RetrofitInstance.eventApi.getEventsByTeam(teamId)
+            } catch (e: Exception) {
+                null
+            }
+
+            val eventList = if (response?.isSuccessful == true) {
+                val dtos = response.body() ?: emptyList()
+
+                // Преобразуем и сохраняем в Room
+                val entities = dtos.map { dto ->
+                    EventEntity(
+                        id = dto.id,
+                        title = dto.title,
+                        description = dto.description,
+                        locationName = dto.locationName,
+                        latitude = dto.latitude,
+                        longitude = dto.longitude,
+                        dateTime = dto.dateTime,
+                        creatorId = dto.creatorId,
+                        teamId = dto.teamId,
+                        imageUri = dto.imageUri.firstOrNull(),
+                        isFinished = dto.finished,
+                        isFavorite = dto.favorite
+                    )
+                }
+
+                eventDao.insertEvents(entities) // ← сохраняем
+                entities
+            } else {
+                emptyList()
+            }
 
             withContext(Dispatchers.Main) {
                 team = t
                 users = u
-                events = e
+                events = eventList
                 currentUser = current
             }
         }

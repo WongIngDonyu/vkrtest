@@ -27,4 +27,7 @@ interface EventApi {
         @Path("eventId") eventId: String,
         @Path("userId") userId: String
     ): Response<Void>
+
+    @GET("/events/team/{teamId}")
+    suspend fun getEventsByTeam(@Path("teamId") teamId: String): Response<List<EventResponseDTO>>
 }
