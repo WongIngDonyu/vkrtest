@@ -68,7 +68,29 @@ class TeamDetailViewModel(
             try {
                 val response = RetrofitInstance.teamApi.joinTeam(tid, user.id)
                 if (response.isSuccessful) {
-                    // Опционально обновляем локальные данные
+                    // ⬇️ Получаем обновлённого пользователя с сервера
+                    val updatedUserResponse = RetrofitInstance.api.getUserByPhone(user.phone)
+                    if (updatedUserResponse.isSuccessful) {
+                        val updatedUser = updatedUserResponse.body()
+                        if (updatedUser != null) {
+                            // ⬇️ Обновляем локально
+                            userDao.insertUser(
+                                UserEntity(
+                                    id = updatedUser.id,
+                                    name = updatedUser.name,
+                                    nickname = updatedUser.nickname,
+                                    phone = updatedUser.phone,
+                                    role = updatedUser.role,
+                                    points = updatedUser.points,
+                                    eventCount = updatedUser.eventCount,
+                                    avatarUri = updatedUser.avatarUri,
+                                    teamId = updatedUser.teamId
+                                )
+                            )
+                        }
+                    }
+
+                    // 🔁 Перезагружаем всё
                     loadTeam(tid)
                 } else {
                     Log.e("TeamJoin", "Failed to join team: ${response.code()}")
@@ -79,15 +101,6 @@ class TeamDetailViewModel(
         }
     }
 
-    fun selectEvent(event: EventEntity) {
-        selectedEvent = event
-    }
-
-
-    fun onDialogClose() {
-        selectedEvent = null
-    }
-
     fun leaveTeam() {
         viewModelScope.launch(Dispatchers.IO) {
             val user = currentUser ?: return@launch
@@ -96,6 +109,27 @@ class TeamDetailViewModel(
             try {
                 val response = RetrofitInstance.teamApi.leaveTeam(tid, user.id)
                 if (response.isSuccessful) {
+                    // ⬇️ Тоже обновляем пользователя
+                    val updatedUserResponse = RetrofitInstance.api.getUserByPhone(user.phone)
+                    if (updatedUserResponse.isSuccessful) {
+                        val updatedUser = updatedUserResponse.body()
+                        if (updatedUser != null) {
+                            userDao.insertUser(
+                                UserEntity(
+                                    id = updatedUser.id,
+                                    name = updatedUser.name,
+                                    nickname = updatedUser.nickname,
+                                    phone = updatedUser.phone,
+                                    role = updatedUser.role,
+                                    points = updatedUser.points,
+                                    eventCount = updatedUser.eventCount,
+                                    avatarUri = updatedUser.avatarUri,
+                                    teamId = updatedUser.teamId
+                                )
+                            )
+                        }
+                    }
+
                     loadTeam(tid)
                 } else {
                     Log.e("TeamLeave", "Failed to leave team: ${response.code()}")
@@ -104,5 +138,13 @@ class TeamDetailViewModel(
                 Log.e("TeamLeave", "Error leaving team", e)
             }
         }
+    }
+
+    fun selectEvent(event: EventEntity) {
+        selectedEvent = event
+    }
+
+    fun onDialogClose() {
+        selectedEvent = null
     }
 }

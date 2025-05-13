@@ -48,7 +48,7 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
     val currentUser = viewModel.currentUser
     val selectedEvent = viewModel.selectedEvent
 
-    LaunchedEffect(teamId) {
+    LaunchedEffect(teamId, currentUser?.teamId) {
         viewModel.loadTeam(teamId)
     }
 

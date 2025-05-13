@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +35,7 @@ interface TeamDao {
     @Query("SELECT * FROM teams WHERE id = :teamId LIMIT 1")
     suspend fun getTeamByIdOnce(teamId: Int): TeamEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertTeams(teams: List<TeamEntity>)
 
     @Query("DELETE FROM teams")
