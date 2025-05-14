@@ -48,6 +48,7 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(WindowInsets.statusBars.asPaddingValues())
                 .padding(16.dp)
         ) {
             if (!event.imageUri.isNullOrEmpty()) {

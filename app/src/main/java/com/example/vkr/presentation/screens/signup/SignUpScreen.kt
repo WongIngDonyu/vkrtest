@@ -45,38 +45,48 @@ fun SignUpScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(8.dp))
         Text("Присоединяйтесь к движению за чистоту!", style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(24.dp))
+
         OutlinedTextField(
             value = viewModel.name,
             onValueChange = { viewModel.name = it },
             label = { Text("Введите имя") },
-            isError = viewModel.nameError,
+            isError = viewModel.nameErrorText.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.nameError) Text("Имя не может быть пустым", color = Color.Red)
+        if (viewModel.nameErrorText.isNotEmpty()) {
+            Text(viewModel.nameErrorText, color = Color.Red)
+        }
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = viewModel.nickname,
             onValueChange = { viewModel.nickname = it },
             label = { Text("Введите никнейм") },
-            isError = viewModel.nicknameError,
+            isError = viewModel.nicknameErrorText.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.nicknameError) Text("Минимум 3 символа", color = Color.Red)
+        if (viewModel.nicknameErrorText.isNotEmpty()) {
+            Text(viewModel.nicknameErrorText, color = Color.Red)
+        }
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = viewModel.phone,
             onValueChange = { viewModel.phone = it },
             label = { Text("Введите номер телефона") },
-            isError = viewModel.phoneError,
+            isError = viewModel.phoneErrorText.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.phoneError) Text("Некорректный номер", color = Color.Red)
+        if (viewModel.phoneErrorText.isNotEmpty()) {
+            Text(viewModel.phoneErrorText, color = Color.Red)
+        }
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = viewModel.password,
             onValueChange = { viewModel.password = it },
             label = { Text("Введите пароль") },
-            isError = viewModel.passwordError,
+            isError = viewModel.passwordErrorText.isNotEmpty(),
             visualTransformation = if (viewModel.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = viewModel::togglePasswordVisibility) {
@@ -85,13 +95,16 @@ fun SignUpScreen(navController: NavController) {
             },
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.passwordError) Text("Пароль не может быть пустым", color = Color.Red)
+        if (viewModel.passwordErrorText.isNotEmpty()) {
+            Text(viewModel.passwordErrorText, color = Color.Red)
+        }
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = viewModel.confirmPassword,
             onValueChange = { viewModel.confirmPassword = it },
             label = { Text("Повторите пароль") },
-            isError = viewModel.confirmPasswordError,
+            isError = viewModel.confirmPasswordErrorText.isNotEmpty(),
             visualTransformation = if (viewModel.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = viewModel::togglePasswordVisibility) {
@@ -100,8 +113,11 @@ fun SignUpScreen(navController: NavController) {
             },
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.confirmPasswordError) Text("Пароли не совпадают", color = Color.Red)
+        if (viewModel.confirmPasswordErrorText.isNotEmpty()) {
+            Text(viewModel.confirmPasswordErrorText, color = Color.Red)
+        }
         Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = viewModel::signUp,
             modifier = Modifier.fillMaxWidth(),
@@ -109,7 +125,9 @@ fun SignUpScreen(navController: NavController) {
         ) {
             Text("Создать аккаунт", color = Color.White)
         }
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = "Уже есть аккаунт? Войти",
             modifier = Modifier

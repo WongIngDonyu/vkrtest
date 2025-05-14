@@ -48,6 +48,7 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(WindowInsets.statusBars.asPaddingValues())
                 .padding(16.dp)
         ) {
             Box(

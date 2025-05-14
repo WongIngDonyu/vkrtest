@@ -29,3 +29,4 @@ interface EventApi {
     @PUT("/events/{id}/finish")
     suspend fun finishEvent(@Path("id") eventId: String): Response<Void>
 }
+

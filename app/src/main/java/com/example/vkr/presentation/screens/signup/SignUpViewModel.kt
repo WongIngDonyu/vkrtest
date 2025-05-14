@@ -21,11 +21,11 @@ class SignUpViewModel : ViewModel() {
     var confirmPassword by mutableStateOf("")
     var isPasswordVisible by mutableStateOf(false)
 
-    var nameError by mutableStateOf(false)
-    var nicknameError by mutableStateOf(false)
-    var phoneError by mutableStateOf(false)
-    var passwordError by mutableStateOf(false)
-    var confirmPasswordError by mutableStateOf(false)
+    var nameErrorText by mutableStateOf("")
+    var nicknameErrorText by mutableStateOf("")
+    var phoneErrorText by mutableStateOf("")
+    var passwordErrorText by mutableStateOf("")
+    var confirmPasswordErrorText by mutableStateOf("")
     var navigateToLogin by mutableStateOf(false)
         private set
 
@@ -34,12 +34,29 @@ class SignUpViewModel : ViewModel() {
     }
 
     fun signUp() {
-        nameError = name.isBlank()
-        nicknameError = nickname.length < 3
-        phoneError = phone.isBlank() || !phone.matches(Regex("""\+?\d+"""))
-        passwordError = password.isBlank()
-        confirmPasswordError = password != confirmPassword
-        if (listOf(nameError, nicknameError, phoneError, passwordError, confirmPasswordError).any { it }) return
+        nameErrorText = ""
+        nicknameErrorText = ""
+        phoneErrorText = ""
+        passwordErrorText = ""
+        confirmPasswordErrorText = ""
+        if (name.length !in 2..50) {
+            nameErrorText = "Имя должно содержать от 2 до 50 символов"
+        }
+        if (nickname.length !in 3..30) {
+            nicknameErrorText = "Никнейм должен содержать от 3 до 30 символов"
+        }
+        if (!phone.matches(Regex("""\d{10,15}"""))) {
+            phoneErrorText = "Телефон должен содержать от 10 до 15 цифр"
+        }
+        if (!password.matches(Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$"""))) {
+            passwordErrorText = "Пароль должен быть не менее 8 символов и содержать строчную, заглавную букву и цифру"
+        }
+        if (password != confirmPassword) {
+            confirmPasswordErrorText = "Пароли не совпадают"
+        }
+        if (listOf(nameErrorText, nicknameErrorText, phoneErrorText, passwordErrorText, confirmPasswordErrorText).any { it.isNotEmpty() }) {
+            return
+        }
         val user = RegisterDTO(name, nickname, phone, password)
         viewModelScope.launch {
             try {

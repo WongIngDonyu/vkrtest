@@ -128,7 +128,11 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
                     event = event,
                     onClick = { viewModel.onEventClick(event) },
                     onDelete = {
-                        if (event.creatorId != viewModel.currentUserId) {
+                        if (event.creatorId == viewModel.currentUserId) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Вы не можете покинуть своё мероприятие")
+                            }
+                        } else {
                             viewModel.leaveEvent(event.id) {
                                 scope.launch { snackbarHostState.showSnackbar(it) }
                             }
