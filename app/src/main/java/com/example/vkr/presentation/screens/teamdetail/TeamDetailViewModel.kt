@@ -12,6 +12,7 @@ import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.TeamRepository
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -20,11 +21,7 @@ import kotlinx.coroutines.withContext
 
 class TeamDetailViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val context = application.applicationContext
-    private val teamDao = AppDatabase.getInstance(context).teamDao()
-    private val userDao = AppDatabase.getInstance(context).userDao()
-    private val eventDao = AppDatabase.getInstance(context).eventDao()
-    private val session = UserSessionManager(context)
+    private val repository: TeamRepository
 
     var team by mutableStateOf<TeamEntity?>(null)
         private set
@@ -41,118 +38,42 @@ class TeamDetailViewModel(application: Application) : AndroidViewModel(applicati
     var selectedEvent by mutableStateOf<EventEntity?>(null)
         private set
 
+    init {
+        val context = application.applicationContext
+        repository = TeamRepository(teamDao = AppDatabase.getInstance(context).teamDao(), userDao = AppDatabase.getInstance(context).userDao(), eventDao = AppDatabase.getInstance(context).eventDao(), session = UserSessionManager(context)
+        )
+    }
+
     fun loadTeam(teamId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val t = teamDao.getAllTeams().firstOrNull { it.id == teamId }
-            val u = teamDao.getUsersByTeam(teamId)
-            val phone = session.userPhone.firstOrNull()
-            val current = phone?.let { userDao.getUserByPhone(it) }
-
-            val response = try {
-                RetrofitInstance.eventApi.getEventsByTeam(teamId)
-            } catch (e: Exception) {
-                null
-            }
-            val eventList = if (response?.isSuccessful == true) {
-                val dtos = response.body() ?: emptyList()
-                val entities = dtos.map { dto ->
-                    EventEntity(
-                        id = dto.id,
-                        title = dto.title,
-                        description = dto.description,
-                        locationName = dto.locationName,
-                        latitude = dto.latitude,
-                        longitude = dto.longitude,
-                        dateTime = dto.dateTime,
-                        creatorId = dto.creatorId,
-                        teamId = dto.teamId,
-                        imageUri = dto.imageUri.firstOrNull(),
-                        isFinished = dto.finished,
-                        isFavorite = dto.favorite
-                    )
-                }
-                eventDao.insertEvents(entities)
-                entities
-            } else {
-                emptyList()
-            }
+            val data = repository.loadTeamData(teamId)
             withContext(Dispatchers.Main) {
-                team = t
-                users = u
-                events = eventList
-                currentUser = current
+                team = data.team
+                users = data.users
+                events = data.events
+                currentUser = data.currentUser
             }
         }
     }
 
     fun joinTeam() {
+        val user = currentUser
+        val tid = team?.id
+        if (user == null || tid == null) return
         viewModelScope.launch(Dispatchers.IO) {
-            val user = currentUser ?: return@launch
-            val tid = team?.id ?: return@launch
-            try {
-                val response = RetrofitInstance.teamApi.joinTeam(tid, user.id)
-                if (response.isSuccessful) {
-                    val updatedUserResponse = RetrofitInstance.api.getUserByPhone(user.phone)
-                    if (updatedUserResponse.isSuccessful) {
-                        val updatedUser = updatedUserResponse.body()
-                        if (updatedUser != null) {
-                            userDao.insertUser(
-                                UserEntity(
-                                    id = updatedUser.id,
-                                    name = updatedUser.name,
-                                    nickname = updatedUser.nickname,
-                                    phone = updatedUser.phone,
-                                    role = updatedUser.role,
-                                    points = updatedUser.points,
-                                    eventCount = updatedUser.eventCount,
-                                    avatarUri = updatedUser.avatarUri,
-                                    teamId = updatedUser.teamId
-                                )
-                            )
-                        }
-                    }
-                    loadTeam(tid)
-                } else {
-                    Log.e("TeamJoin", "Failed to join team: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("TeamJoin", "Error joining team", e)
+            repository.joinTeam(tid, user)?.let {
+                loadTeam(tid)
             }
         }
     }
 
     fun leaveTeam() {
+        val user = currentUser
+        val tid = team?.id
+        if (user == null || tid == null) return
         viewModelScope.launch(Dispatchers.IO) {
-            val user = currentUser ?: return@launch
-            val tid = team?.id ?: return@launch
-            try {
-                val response = RetrofitInstance.teamApi.leaveTeam(tid, user.id)
-                if (response.isSuccessful) {
-                    val updatedUserResponse = RetrofitInstance.api.getUserByPhone(user.phone)
-                    if (updatedUserResponse.isSuccessful) {
-                        val updatedUser = updatedUserResponse.body()
-                        if (updatedUser != null) {
-                            userDao.insertUser(
-                                UserEntity(
-                                    id = updatedUser.id,
-                                    name = updatedUser.name,
-                                    nickname = updatedUser.nickname,
-                                    phone = updatedUser.phone,
-                                    role = updatedUser.role,
-                                    points = updatedUser.points,
-                                    eventCount = updatedUser.eventCount,
-                                    avatarUri = updatedUser.avatarUri,
-                                    teamId = updatedUser.teamId
-                                )
-                            )
-                        }
-                    }
-                    loadTeam(tid)
-                } else {
-                    Log.e("TeamLeave", "Failed to leave team: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("TeamLeave", "Error leaving team", e)
+            repository.leaveTeam(tid, user)?.let {
+                loadTeam(tid)
             }
         }
     }

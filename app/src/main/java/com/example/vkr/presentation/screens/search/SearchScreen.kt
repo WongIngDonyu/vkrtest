@@ -53,6 +53,8 @@ fun SearchScreen(navController: NavController) {
             color = entity.color
         )
     }
+    val defaultFillColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.33f).toArgb()
+    val defaultStrokeColor = MaterialTheme.colorScheme.onSurface.toArgb()
     Box(modifier = Modifier.fillMaxSize()) {
         if (teamAreas.isNotEmpty()) {
             AndroidView(
@@ -78,12 +80,10 @@ fun SearchScreen(navController: NavController) {
                         if (area.points.size >= 3) {
                             val polygon = Polygon(LinearRing(area.points), emptyList())
                             val obj = mapObjects.addPolygon(polygon)
-                            obj.fillColor = if (area.color != 0) area.color else 0x5500FF00
-                            obj.strokeColor = Color.Black.toArgb()
+                            obj.fillColor = if (area.color != 0) area.color else defaultFillColor
+                            obj.strokeColor = defaultStrokeColor
                             obj.strokeWidth = 2f
-
                             polygons[obj] = area
-
                             val center = getPolygonCenter(area.points)
                             val label = mapObjects.addPlacemark(center)
                             label.setText(area.teamName)
@@ -98,6 +98,7 @@ fun SearchScreen(navController: NavController) {
                                 }
                             }
                         }
+
                         override fun onMapLongTap(map: Map, point: Point) {}
                     })
                     mapView
@@ -105,7 +106,6 @@ fun SearchScreen(navController: NavController) {
                 modifier = Modifier.matchParentSize()
             )
         }
-
         if (teams.isNotEmpty()) {
             val topTeams = teams.sortedByDescending { it.points }.take(3)
             Column(
@@ -113,14 +113,14 @@ fun SearchScreen(navController: NavController) {
                     .align(Alignment.TopCenter)
                     .padding(top = 24.dp)
                     .clickable { viewModel.onShowDialog() }
-                    .background(Color.Black.copy(alpha = 0.4f), shape = RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f), shape = RoundedCornerShape(12.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .widthIn(max = 200.dp)
             ) {
                 Text(
                     text = "Рейтинг команд",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -129,7 +129,7 @@ fun SearchScreen(navController: NavController) {
                 topTeams.forEachIndexed { index, team ->
                     Text(
                         text = "${index + 1}. ${team.name} — ${team.points} очков",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -137,7 +137,6 @@ fun SearchScreen(navController: NavController) {
             }
         }
     }
-
     if (showDialog) {
         AlertDialog(
             onDismissRequest = viewModel::onHideDialog,

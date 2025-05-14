@@ -12,6 +12,7 @@ import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.UserDTO
 import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.UserRepository
 import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.ui.components.copyImageToInternalStorage
 import kotlinx.coroutines.Dispatchers
@@ -21,8 +22,11 @@ import kotlinx.coroutines.withContext
 class EditProfileViewModel(application: Application) : AndroidViewModel(application) {
 
     private val context = application.applicationContext
-    private val userDao = AppDatabase.getInstance(context).userDao()
-    private val session = UserSessionManager(context)
+    private val repository = UserRepository(
+        userDao = AppDatabase.getInstance(context).userDao(),
+        teamDao = AppDatabase.getInstance(context).teamDao(),
+        session = UserSessionManager(context)
+    )
 
     var user by mutableStateOf<UserEntity?>(null)
         private set
@@ -50,36 +54,17 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun loadUserByPhone(phone: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val response = RetrofitInstance.api.getUserByPhone(phone)
-                if (response.isSuccessful) {
-                    val userDto = response.body() ?: return@launch
-                    val loadedUser = UserEntity(
-                        id = userDto.id,
-                        name = userDto.name,
-                        nickname = userDto.nickname,
-                        phone = userDto.phone,
-                        role = userDto.role,
-                        points = userDto.points,
-                        eventCount = userDto.eventCount,
-                        avatarUri = userDto.avatarUri,
-                        teamId = userDto.teamId
-                    )
-                    withContext(Dispatchers.Main) {
-                        user = loadedUser
-                        fullName = loadedUser.name
-                        username = loadedUser.nickname
-                        this@EditProfileViewModel.phone = loadedUser.phone
-                    }
-                } else {
-                    Log.e("EditProfile", "Ошибка загрузки пользователя: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("EditProfile", "Ошибка получения пользователя", e)
+        viewModelScope.launch {
+            val loaded = repository.loadUserFromApi(phone)
+            if (loaded != null) {
+                user = loaded
+                fullName = loaded.name
+                username = loaded.nickname
+                this@EditProfileViewModel.phone = loaded.phone
             }
         }
     }
+
     fun save(onSuccess: () -> Unit) {
         val validationResult = validate()
         if (validationResult != null || user == null) {
@@ -87,49 +72,18 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
             usernameError = validationResult == "username"
             return
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            val avatarPath = avatarUri?.let {
-                copyImageToInternalStorage(context, it)
-            } ?: user!!.avatarUri
-            val updatedDto = UserDTO(
-                id = user!!.id,
-                name = fullName,
+
+        viewModelScope.launch {
+            val success = repository.updateUser(
+                user = user!!,
+                fullName = fullName,
                 nickname = username,
-                phone = user!!.phone,
-                role = user!!.role,
-                points = user!!.points,
-                eventCount = user!!.eventCount,
-                avatarUri = avatarPath,
-                teamId = user!!.teamId
+                newAvatarUri = avatarUri,
+                context = context
             )
-            try {
-                val response = RetrofitInstance.userApi.updateUser(user!!.id, updatedDto)
-                if (response.isSuccessful) {
-                    val updatedUserDto = response.body()
-                    if (updatedUserDto != null) {
-                        session.saveUser(updatedUserDto.phone, updatedUserDto.role)
-                        val updatedUser = UserEntity(
-                            id = updatedUserDto.id,
-                            name = updatedUserDto.name,
-                            nickname = updatedUserDto.nickname,
-                            phone = updatedUserDto.phone,
-                            role = updatedUserDto.role,
-                            points = updatedUserDto.points,
-                            eventCount = updatedUserDto.eventCount,
-                            avatarUri = updatedUserDto.avatarUri,
-                            teamId = updatedUserDto.teamId
-                        )
-                        userDao.updateUser(updatedUser)
-                        loadUserByPhone(updatedUser.phone)
-                        withContext(Dispatchers.Main) {
-                            onSuccess()
-                        }
-                    }
-                } else {
-                    Log.e("EditProfile", "Ошибка обновления: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("EditProfile", "Ошибка подключения к серверу", e)
+            if (success) {
+                loadUserByPhone(user!!.phone)
+                withContext(Dispatchers.Main) { onSuccess() }
             }
         }
     }

@@ -37,6 +37,8 @@ fun LoginScreen(navController: NavController) {
         factory = LoginViewModelFactory(context.applicationContext as Application)
     )
 
+    val colorScheme = MaterialTheme.colorScheme
+
     LaunchedEffect(viewModel.navigateToHome) {
         if (viewModel.navigateToHome) {
             navController.navigate("home") {
@@ -55,6 +57,7 @@ fun LoginScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(8.dp))
         Text("С возвращением!", style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(24.dp))
+
         OutlinedTextField(
             value = viewModel.phone,
             onValueChange = viewModel::onPhoneChange,
@@ -64,8 +67,12 @@ fun LoginScreen(navController: NavController) {
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.phoneError) Text("Введите корректный номер", color = Color.Red)
+        if (viewModel.phoneError) {
+            Text("Введите корректный номер", color = colorScheme.error)
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = viewModel.password,
             onValueChange = viewModel::onPasswordChange,
@@ -80,23 +87,34 @@ fun LoginScreen(navController: NavController) {
             },
             modifier = Modifier.fillMaxWidth()
         )
-        if (viewModel.passwordError) Text("Пароль не может быть пустым", color = Color.Red)
-        if (viewModel.loginError) Text("Неверный номер телефона или пароль", color = Color.Red)
+        if (viewModel.passwordError) {
+            Text("Пароль не может быть пустым", color = colorScheme.error)
+        }
+        if (viewModel.loginError) {
+            Text("Неверный номер телефона или пароль", color = colorScheme.error)
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = viewModel::onLoginClick,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF))
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorScheme.primary,
+                contentColor = colorScheme.onPrimary
+            )
         ) {
-            Text("Войти", color = Color.White)
+            Text("Войти")
         }
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = "Нет аккаунта? Зарегистрироваться",
             modifier = Modifier
                 .clickable { navController.navigate("signup") }
                 .padding(top = 8.dp),
-            color = Color.Black
+            color = colorScheme.primary
         )
     }
 }

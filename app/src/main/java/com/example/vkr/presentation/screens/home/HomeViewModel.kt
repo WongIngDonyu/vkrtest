@@ -21,20 +21,16 @@ import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
 
-class HomeViewModel(private val eventDao: EventDao, private val userDao: UserDao, application: Application) : AndroidViewModel(application) {
-
-    private val session = UserSessionManager(application.applicationContext)
+class HomeViewModel(
+    private val repository: EventRepository,
+    private val session: UserSessionManager
+) : ViewModel() {
 
     var state by mutableStateOf(HomeViewState())
         private set
 
     var selectedEvent by mutableStateOf<EventEntity?>(null)
         private set
-
-    private val repository = EventRepository(
-        RetrofitInstance.eventApi,
-        eventDao
-    )
 
     init {
         viewModelScope.launch {
@@ -48,21 +44,16 @@ class HomeViewModel(private val eventDao: EventDao, private val userDao: UserDao
     }
 
     fun loadEvents() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val phone = session.userPhone.firstOrNull()
-            val user = phone?.let { userDao.getUserByPhone(it) }
-            val joinedEvents = user?.id
-                ?.let { userDao.getUserWithEventsOnce(it)?.events }
-                ?.filter { !it.isFinished }
-                ?: emptyList()
-            val counts = joinedEvents.associate { it.id to userDao.getUserCountForEvent(it.id) }
-            withContext(Dispatchers.Main) {
-                state = state.copy(
-                    allEvents = joinedEvents,
-                    participantCounts = counts
-                )
-                applyFilters()
-            }
+            val user = phone?.let { repository.getUserByPhone(it) }
+            val joinedEvents = user?.id?.let { repository.getJoinedEventsForUser(it) } ?: emptyList()
+            val counts = repository.getParticipantCounts(joinedEvents)
+            state = state.copy(
+                allEvents = joinedEvents,
+                participantCounts = counts
+            )
+            applyFilters()
         }
     }
 
@@ -77,9 +68,8 @@ class HomeViewModel(private val eventDao: EventDao, private val userDao: UserDao
     }
 
     fun onFavoriteToggle(event: EventEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val updated = event.copy(isFavorite = !event.isFavorite)
-            eventDao.updateEvent(updated)
+        viewModelScope.launch {
+            repository.toggleFavorite(event)
             loadEvents()
         }
     }
@@ -95,11 +85,9 @@ class HomeViewModel(private val eventDao: EventDao, private val userDao: UserDao
     private fun applyFilters() {
         viewModelScope.launch {
             val phone = session.userPhone.firstOrNull()
-            val user = phone?.let { userDao.getUserByPhone(it) }
-            val joinedEvents = user?.id
-                ?.let { userDao.getUserWithEventsOnce(it)?.events }
-                ?.filter { !it.isFinished }
-                ?: emptyList()
+            val user = phone?.let { repository.getUserByPhone(it) }
+            val joinedEvents = user?.id?.let { repository.getJoinedEventsForUser(it) } ?: emptyList()
+
             val filtered = when (state.selectedFilter) {
                 "Предстоящие" -> {
                     val now = LocalDate.now()
@@ -114,11 +102,13 @@ class HomeViewModel(private val eventDao: EventDao, private val userDao: UserDao
                 }
                 else -> joinedEvents
             }
+
             val searched = if (state.searchQuery.isNotBlank()) {
                 filtered.filter {
                     it.title.contains(state.searchQuery.trim(), ignoreCase = true)
                 }
             } else filtered
+
             state = state.copy(filteredEvents = searched, allEvents = joinedEvents)
         }
     }

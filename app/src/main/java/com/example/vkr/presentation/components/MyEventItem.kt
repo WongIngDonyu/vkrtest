@@ -33,15 +33,21 @@ import com.example.vkr.data.model.EventEntity
 import java.io.File
 
 @Composable
-fun MyEventItem(event: EventEntity, onClick: () -> Unit, onDelete: (() -> Unit)? = null) {
+fun MyEventItem(
+    event: EventEntity,
+    onClick: () -> Unit,
+    onDelete: (() -> Unit)? = null
+) {
     val isFinished = event.isFinished
-    val titleColor = if (isFinished) Color.Gray else Color.Unspecified
-    val dateColor = if (isFinished) Color.LightGray else Color.Gray
+    val titleColor = if (isFinished) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+    val dateColor = if (isFinished) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurfaceVariant
+    val statusColor = MaterialTheme.colorScheme.error
     val painter = if (!event.imageUri.isNullOrBlank()) {
         rememberAsyncImagePainter(Uri.parse(event.imageUri))
     } else {
         painterResource(id = R.drawable.testew)
     }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -72,7 +78,7 @@ fun MyEventItem(event: EventEntity, onClick: () -> Unit, onDelete: (() -> Unit)?
             if (isFinished) {
                 Text(
                     text = "Завершено",
-                    color = Color.Red,
+                    color = statusColor,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium
                 )
@@ -83,7 +89,7 @@ fun MyEventItem(event: EventEntity, onClick: () -> Unit, onDelete: (() -> Unit)?
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Удалить",
-                    tint = Color.Red
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }

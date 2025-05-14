@@ -1,5 +1,6 @@
 package com.example.vkr.presentation.signup
 
+import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,15 +22,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.vkr.presentation.screens.signup.SignUpViewModel
+import com.example.vkr.presentation.screens.signup.SignUpViewModelFactory
 
 @Composable
 fun SignUpScreen(navController: NavController) {
-    val viewModel = remember { SignUpViewModel() }
+    val context = LocalContext.current
+    val viewModel: SignUpViewModel = viewModel(
+        factory = SignUpViewModelFactory(context.applicationContext as Application)
+    )
 
     LaunchedEffect(viewModel.navigateToLogin) {
         if (viewModel.navigateToLogin) {

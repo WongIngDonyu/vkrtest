@@ -35,6 +35,9 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
     val context = LocalContext.current
     val session = remember { UserSessionManager(context) }
     val role by session.userRole.collectAsState(initial = null)
+    val fabColor = MaterialTheme.colorScheme.primary
+    val fabIconTint = MaterialTheme.colorScheme.onPrimary
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
@@ -56,7 +59,8 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
             if (currentRoute == "events" && role == "ORGANIZER") {
                 FloatingActionButton(
                     onClick = { navController.navigate("create_event") },
-                    containerColor = Color(0xFF7A5EFF),
+                    containerColor = fabColor,
+                    contentColor = fabIconTint,
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(

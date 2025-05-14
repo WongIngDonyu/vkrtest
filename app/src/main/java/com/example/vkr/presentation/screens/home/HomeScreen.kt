@@ -26,6 +26,9 @@ import com.example.vkr.R
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.dao.EventDao
 import com.example.vkr.data.dao.UserDao
+import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.EventRepository
+import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.presentation.components.ActivityItem
 import com.example.vkr.presentation.components.EventCard
 import com.example.vkr.presentation.components.FilterCard
@@ -40,6 +43,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(application, eventDao, userDao)
     )
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -47,19 +51,21 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                 viewModel.loadEvents()
             }
         }
-        val lifecycle = lifecycleOwner.lifecycle
-        lifecycle.addObserver(observer)
-
+        lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
-            lifecycle.removeObserver(observer)
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
     val state = viewModel.state
     val selectedEvent = viewModel.selectedEvent
+    val colorScheme = MaterialTheme.colorScheme
+
     Column(modifier = modifier.padding(16.dp)) {
         Text("Добро пожаловать в", style = MaterialTheme.typography.bodyMedium)
         Text("CleanTogether", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = state.searchQuery,
             onValueChange = viewModel::onSearchChanged,
@@ -67,7 +73,9 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp)
         )
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -82,12 +90,15 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                 }
             }
         }
+
         Spacer(modifier = Modifier.height(24.dp))
+
         val favoriteEvents = state.filteredEvents.filter { it.isFavorite }
         Text("Избранные мероприятия", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
+
         if (favoriteEvents.isEmpty()) {
-            Text("Пока у вас нет избранных мероприятий.")
+            Text("Пока у вас нет избранных мероприятий.", color = colorScheme.onSurfaceVariant)
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(favoriteEvents) { event ->
@@ -96,17 +107,20 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                     } else {
                         painterResource(id = R.drawable.testew)
                     }
+
                     EventCard(title = event.title, painter = painter) {
                         viewModel.onEventClick(event)
                     }
                 }
             }
         }
+
         Spacer(modifier = Modifier.height(24.dp))
         Text("Ваши активности", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
+
         if (state.filteredEvents.isEmpty()) {
-            Text("Вы пока не присоединились ни к одному мероприятию.")
+            Text("Вы пока не присоединились ни к одному мероприятию.", color = colorScheme.onSurfaceVariant)
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(state.filteredEvents) { event ->
@@ -115,6 +129,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                     } else {
                         painterResource(id = R.drawable.testew)
                     }
+
                     ActivityItem(
                         title = event.title,
                         subtitle = event.dateTime,
@@ -126,6 +141,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                 }
             }
         }
+
         selectedEvent?.let { event ->
             AlertDialog(
                 onDismissRequest = viewModel::onDialogClose,
@@ -137,16 +153,19 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                 title = { Text(event.title, style = MaterialTheme.typography.titleLarge) },
                 text = {
                     Column {
-                        Text("${event.locationName}")
-                        Text("${event.dateTime}")
+                        Text(event.locationName, style = MaterialTheme.typography.bodyMedium)
+                        Text(event.dateTime, style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(event.description)
+                        Text(event.description, style = MaterialTheme.typography.bodySmall)
                     }
-                }
+                },
+                containerColor = colorScheme.surface,
+                textContentColor = colorScheme.onSurface
             )
         }
     }
 }
+
 class HomeViewModelFactory(
     private val application: Application,
     private val eventDao: EventDao,
@@ -154,8 +173,14 @@ class HomeViewModelFactory(
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(eventDao, userDao, application) as T
+            val context = application.applicationContext
+            val repository = EventRepository(
+                api = RetrofitInstance.eventApi,
+                eventDao = eventDao,
+                teamDao = AppDatabase.getInstance(context).teamDao(),
+                userDao = userDao
+            )
+            return HomeViewModel(repository, UserSessionManager(context)) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

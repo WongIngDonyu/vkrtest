@@ -19,7 +19,10 @@ fun BottomNavigationBar(navController: NavController, currentRoute: String) {
         BottomNavItem("events", Icons.Default.DateRange, "Мероприятия"),
         BottomNavItem("profile", Icons.Default.Person, "Профиль")
     )
-    NavigationBar(containerColor = Color.White) {
+
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.background
+    ) {
         items.forEach { item ->
             NavigationBarItem(
                 selected = currentRoute == item.route,
@@ -31,11 +34,26 @@ fun BottomNavigationBar(navController: NavController, currentRoute: String) {
                         }
                     }
                 },
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) },
+                icon = {
+                    Icon(
+                        item.icon,
+                        contentDescription = item.label,
+                        tint = if (currentRoute == item.route)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                label = {
+                    Text(
+                        item.label,
+                        color = if (currentRoute == item.route)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFF7A5EFF),
-                    selectedTextColor = Color(0xFF7A5EFF),
                     indicatorColor = Color.Transparent
                 )
             )

@@ -1,6 +1,7 @@
 package com.example.vkr.presentation.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,7 +17,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun EventCard2(title: String, datePlace: String, painter: Painter, onClick: () -> Unit) {
+fun EventCard2(
+    title: String,
+    datePlace: String,
+    painter: Painter,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .width(200.dp)
@@ -30,14 +36,26 @@ fun EventCard2(title: String, datePlace: String, painter: Painter, onClick: () -
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.4f))
+        )
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(10.dp)
         ) {
-            Text(text = title, color = Color.White, style = MaterialTheme.typography.labelLarge)
-            Text(text = datePlace, color = Color.White, style = MaterialTheme.typography.labelSmall)
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelLarge
+            )
+            Text(
+                text = datePlace,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }

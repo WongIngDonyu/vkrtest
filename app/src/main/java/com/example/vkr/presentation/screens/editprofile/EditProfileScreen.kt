@@ -36,20 +36,24 @@ fun EditProfileScreen(navController: NavController) {
     val sessionManager = remember { UserSessionManager(context) }
     val phone by sessionManager.userPhone.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
+    val colorScheme = MaterialTheme.colorScheme
 
     LaunchedEffect(phone) {
         phone?.let { viewModel.loadUserByPhone(it) }
     }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         viewModel.onAvatarChange(uri)
     }
+
     val avatarPainter = when {
         viewModel.avatarUri != null -> rememberAsyncImagePainter(viewModel.avatarUri)
         !viewModel.user?.avatarUri.isNullOrEmpty() -> rememberAsyncImagePainter(Uri.parse(viewModel.user!!.avatarUri))
         else -> painterResource(id = R.drawable.images)
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -57,13 +61,19 @@ fun EditProfileScreen(navController: NavController) {
             .verticalScroll(rememberScrollState())
     ) {
         Text("Редактирование профиля", style = MaterialTheme.typography.headlineSmall)
-        Text("Обновите ваши данные", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text(
+            "Обновите ваши данные",
+            style = MaterialTheme.typography.bodyMedium,
+            color = colorScheme.onSurfaceVariant
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Box(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(Color.LightGray)
+                .background(colorScheme.surfaceVariant)
                 .align(Alignment.CenterHorizontally),
             contentAlignment = Alignment.Center
         ) {
@@ -74,13 +84,16 @@ fun EditProfileScreen(navController: NavController) {
                 contentScale = ContentScale.Crop
             )
         }
+
         TextButton(
             onClick = { imagePickerLauncher.launch("image/*") },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Изменить фото")
         }
+
         Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = viewModel.fullName,
             onValueChange = viewModel::onFullNameChange,
@@ -89,8 +102,14 @@ fun EditProfileScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         if (viewModel.fullNameError)
-            Text("Имя не может быть пустым", color = Color.Red, fontSize = 12.sp)
+            Text(
+                "Имя не может быть пустым",
+                color = colorScheme.error,
+                fontSize = 12.sp
+            )
+
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = viewModel.username,
             onValueChange = viewModel::onUsernameChange,
@@ -99,8 +118,14 @@ fun EditProfileScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         if (viewModel.usernameError)
-            Text("Минимум 3 символа", color = Color.Red, fontSize = 12.sp)
+            Text(
+                "Минимум 3 символа",
+                color = colorScheme.error,
+                fontSize = 12.sp
+            )
+
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = viewModel.phone,
             onValueChange = {},
@@ -109,13 +134,20 @@ fun EditProfileScreen(navController: NavController) {
             enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(24.dp))
+
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Badge, contentDescription = "Роль", tint = Color.Gray)
+            Icon(Icons.Default.Badge, contentDescription = "Роль", tint = colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Роль: ${viewModel.user?.role ?: "неизвестна"}", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "Роль: ${viewModel.user?.role ?: "неизвестна"}",
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
+
         Spacer(modifier = Modifier.height(32.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -127,16 +159,19 @@ fun EditProfileScreen(navController: NavController) {
                             navController.previousBackStackEntry
                                 ?.savedStateHandle
                                 ?.set("reloadProfile", true)
-
                             navController.popBackStack()
                         }
                     }
                 },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onPrimary
+                )
             ) {
-                Text("Сохранить", color = Color.White)
+                Text("Сохранить")
             }
+
             OutlinedButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.weight(1f)

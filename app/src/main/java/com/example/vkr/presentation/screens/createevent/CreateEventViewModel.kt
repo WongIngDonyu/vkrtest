@@ -11,32 +11,26 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.AppDatabase
-import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.EventRequestDTO
-import com.example.vkr.data.model.UserEventCrossRef
 import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.EventRepository
 import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.ui.components.DateTimeUtils
 import com.example.vkr.ui.components.copyImageToInternalStorage
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.util.UUID
 
 class CreateEventViewModel(application: Application) : AndroidViewModel(application) {
 
     @SuppressLint("StaticFieldLeak")
     private val context = application.applicationContext
-    private val db = AppDatabase.getInstance(context)
-    private val userDao = db.userDao()
-    private val teamDao = db.teamDao()
-    private val eventDao = db.eventDao()
     private val session = UserSessionManager(context)
+    private val repository = EventRepository(api = RetrofitInstance.eventApi, eventDao = AppDatabase.getInstance(context).eventDao(), teamDao = AppDatabase.getInstance(context).teamDao(), userDao = AppDatabase.getInstance(context).userDao())
 
     var state by mutableStateOf(CreateEventUiState())
         private set
@@ -87,13 +81,14 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
 
     fun onTeamSelected(teamId: String) {
         viewModelScope.launch {
-            val team = teamDao.getAllTeams().firstOrNull { it.id == teamId }
+            val team = repository.getTeamById(teamId)
             state = state.copy(
                 selectedTeamId = team?.id,
                 selectedTeamName = team?.name
             )
         }
     }
+
     fun onCreateEvent(onSuccess: () -> Unit) {
         val st = state
         val title = st.title.trim()
@@ -101,16 +96,19 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
             state = st.copy(titleError = true)
             return
         }
+
         val date = st.selectedDate ?: return
         val time = st.selectedTime ?: return
         val dateTime = LocalDateTime.of(date, time)
         val formattedDateTime = DateTimeUtils.formatDisplay(dateTime)
+
         viewModelScope.launch {
             val phone = session.userPhone.first() ?: return@launch
-            val user = userDao.getUserByPhone(phone) ?: return@launch
+            val user = repository.getUserByPhone(phone) ?: return@launch
+
             val imagePath = st.imageUri?.let { copyImageToInternalStorage(context, it) }
-            val fallbackTeamId: String? = user.teamId
-            val finalTeamId = st.selectedTeamId ?: fallbackTeamId
+            val teamId = st.selectedTeamId ?: user.teamId
+
             val dto = EventRequestDTO(
                 title = title,
                 description = st.description,
@@ -119,40 +117,16 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                 longitude = 37.0,
                 dateTime = formattedDateTime,
                 creatorId = user.id,
-                teamId = finalTeamId,
+                teamId = teamId,
                 imageUri = listOfNotNull(imagePath)
             )
-            try {
-                val response = RetrofitInstance.eventApi.createEvent(dto)
-                if (response.isSuccessful) {
-                    val serverEvent = response.body()
-                    if (serverEvent != null) {
-                        val localEvent = EventEntity(
-                            id = serverEvent.id,
-                            title = serverEvent.title,
-                            description = serverEvent.description,
-                            locationName = serverEvent.locationName,
-                            latitude = serverEvent.latitude,
-                            longitude = serverEvent.longitude,
-                            dateTime = serverEvent.dateTime,
-                            creatorId = serverEvent.creatorId,
-                            teamId = serverEvent.teamId,
-                            imageUri = serverEvent.imageUri.firstOrNull(),
-                            isFinished = serverEvent.finished
-                        )
-                        eventDao.insertEvent(localEvent)
-                        userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, localEvent.id))
-             }
-                } else {
-                    println("Ошибка при отправке события: ${response.errorBody()?.string()}")
-                }
-            } catch (e: Exception) {
-                println("Ошибка подключения при отправке события: ${e.localizedMessage}")
-            }
+
+            repository.createAndSaveEvent(user, dto)
             onSuccess()
         }
     }
 }
+
 data class CreateEventUiState(
     val title: String = "",
     val description: String = "",

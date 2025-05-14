@@ -44,6 +44,7 @@ import com.yandex.mapkit.map.Map
 @Composable
 fun CreateEventScreen(navController: NavController) {
     val context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
     val viewModel: CreateEventViewModel = viewModel(
         factory = CreateEventViewModelFactory(context.applicationContext as Application)
     )
@@ -58,6 +59,7 @@ fun CreateEventScreen(navController: NavController) {
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
     var teamAreas by remember { mutableStateOf<List<TeamArea>>(emptyList()) }
     val teamDao = remember { AppDatabase.getInstance(context).teamDao() }
+
     LaunchedEffect(Unit) {
         teamAreas = teamDao.getAllTeams().map {
             TeamArea(
@@ -68,9 +70,11 @@ fun CreateEventScreen(navController: NavController) {
             )
         }
     }
+
     launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         viewModel.onImagePicked(uri)
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -79,6 +83,7 @@ fun CreateEventScreen(navController: NavController) {
     ) {
         Text("Создание мероприятия", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
+
         OutlinedTextField(
             value = state.title,
             onValueChange = viewModel::onTitleChange,
@@ -86,8 +91,11 @@ fun CreateEventScreen(navController: NavController) {
             isError = state.titleError,
             modifier = Modifier.fillMaxWidth()
         )
-        if (state.titleError) Text("Поле не может быть пустым", color = Color.Red)
+        if (state.titleError)
+            Text("Поле не может быть пустым", color = colorScheme.error)
+
         Spacer(Modifier.height(12.dp))
+
         OutlinedTextField(
             value = state.description,
             onValueChange = viewModel::onDescriptionChange,
@@ -96,16 +104,21 @@ fun CreateEventScreen(navController: NavController) {
                 .fillMaxWidth()
                 .height(100.dp)
         )
+
         Spacer(Modifier.height(12.dp))
+
         OutlinedTextField(
             value = state.location,
             onValueChange = viewModel::onLocationChange,
             label = { Text("Место проведения") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(Modifier.height(12.dp))
+
         Text("Выберите место на карте:", style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(8.dp))
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -120,10 +133,12 @@ fun CreateEventScreen(navController: NavController) {
                 AndroidView(
                     factory = {
                         mapView.map.move(CameraPosition(Point(55.529338, 37.514810), 16.0f, 0.0f, 0.0f))
-                        mapView.map.isZoomGesturesEnabled = false
-                        mapView.map.isScrollGesturesEnabled = true
-                        mapView.map.isRotateGesturesEnabled = false
-                        mapView.map.isTiltGesturesEnabled = false
+                        mapView.map.apply {
+                            isZoomGesturesEnabled = false
+                            isScrollGesturesEnabled = true
+                            isRotateGesturesEnabled = false
+                            isTiltGesturesEnabled = false
+                        }
                         val polygons = mutableMapOf<PolygonMapObject, TeamArea>()
                         val mapObjects = mapView.map.mapObjects
                         mapObjects.clear()
@@ -132,11 +147,9 @@ fun CreateEventScreen(navController: NavController) {
                                 val polygon = Polygon(LinearRing(area.points), emptyList())
                                 val obj = mapObjects.addPolygon(polygon)
                                 obj.fillColor = area.color
-                                obj.strokeColor = Color.Black.toArgb()
+                                obj.strokeColor = colorScheme.onSurface.toArgb()
                                 obj.strokeWidth = 2f
-
                                 polygons[obj] = area
-
                                 val center = getPolygonCenter(area.points)
                                 mapObjects.addPlacemark(center).setText(area.teamName)
                             }
@@ -157,37 +170,47 @@ fun CreateEventScreen(navController: NavController) {
                 )
             }
         }
+
         Spacer(Modifier.height(8.dp))
+
         Text(
             text = if (!state.selectedTeamName.isNullOrBlank())
                 "Вы выбрали команду: ${state.selectedTeamName}"
             else
                 "Нажмите на зону на карте, чтобы выбрать команду",
             style = MaterialTheme.typography.bodyMedium,
-            color = if (state.selectedTeamName != null) Color(0xFF7A5EFF) else Color.Gray
+            color = if (state.selectedTeamName != null) colorScheme.primary else colorScheme.onSurfaceVariant
         )
+
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedButton(
             onClick = { viewModel.onPickDate() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(state.selectedDate?.format(dateFormatter) ?: "Выбрать дату")
         }
+
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedButton(
             onClick = { viewModel.onPickTime() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(state.selectedTime?.format(timeFormatter) ?: "Выбрать время")
         }
+
         Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedButton(
             onClick = { launcher?.launch("image/*") },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (state.imageUri != null) "Выбрано" else "Выбрать фото")
         }
+
         Spacer(modifier = Modifier.height(24.dp))
+
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = {
@@ -196,10 +219,14 @@ fun CreateEventScreen(navController: NavController) {
                     }
                 },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onPrimary
+                )
             ) {
-                Text("Создать", color = Color.White)
+                Text("Создать")
             }
+
             OutlinedButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.weight(1f)
@@ -208,6 +235,7 @@ fun CreateEventScreen(navController: NavController) {
             }
         }
     }
+
     if (state.showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { viewModel.onDismissDate() },
@@ -227,6 +255,7 @@ fun CreateEventScreen(navController: NavController) {
             DatePicker(state = datePickerState, modifier = Modifier.fillMaxWidth())
         }
     }
+
     if (state.showTimePicker) {
         AlertDialog(
             onDismissRequest = { viewModel.onDismissTime() },
@@ -234,12 +263,12 @@ fun CreateEventScreen(navController: NavController) {
                 TextButton(onClick = {
                     viewModel.onTimeSelected(timePickerState.hour, timePickerState.minute)
                 }) {
-                    Text("OK", color = Color(0xFF7A5EFF))
+                    Text("OK", color = colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.onDismissTime() }) {
-                    Text("Отмена", color = Color(0xFF7A5EFF))
+                    Text("Отмена", color = colorScheme.primary)
                 }
             },
             title = { Text("Выберите время") },
@@ -250,7 +279,7 @@ fun CreateEventScreen(navController: NavController) {
                 )
             },
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color(0xFFF9F6FF)
+            containerColor = colorScheme.surfaceVariant
         )
     }
 }

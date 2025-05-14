@@ -11,6 +11,7 @@ import com.example.vkr.data.model.AchievementEntity
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
+import com.example.vkr.data.repository.UserRepository
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -19,10 +20,7 @@ import kotlinx.coroutines.withContext
 
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val context = application.applicationContext
-    private val userDao = AppDatabase.getInstance(context).userDao()
-    private val teamDao = AppDatabase.getInstance(context).teamDao()
-    private val session = UserSessionManager(context)
+    private val repository: UserRepository
 
     var user by mutableStateOf<UserEntity?>(null)
         private set
@@ -43,23 +41,19 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     init {
+        val context = application.applicationContext
+        repository = UserRepository(userDao = AppDatabase.getInstance(context).userDao(), teamDao = AppDatabase.getInstance(context).teamDao(), session = UserSessionManager(context))
         loadProfileFromDb()
     }
 
     fun loadProfileFromDb() {
         viewModelScope.launch(Dispatchers.IO) {
-            val phone = session.userPhone.firstOrNull() ?: return@launch
-            val loadedUser = userDao.getUserByPhone(phone) ?: return@launch
-            val loadedAchievements = userDao.getUserWithAchievements(loadedUser.id).firstOrNull()?.achievements.orEmpty()
-            val loadedEvents = userDao.getUserWithEvents(loadedUser.id).firstOrNull()?.events.orEmpty()
-            val loadedTeam = loadedUser.teamId?.let { teamId ->
-                teamDao.getAllTeams().firstOrNull { team -> team.id == teamId }
-            }
+            val profile = repository.getUserProfile() ?: return@launch
             withContext(Dispatchers.Main) {
-                user = loadedUser
-                achievements = loadedAchievements
-                events = loadedEvents
-                team = loadedTeam
+                user = profile.user
+                achievements = profile.achievements
+                events = profile.events
+                team = profile.team
             }
         }
     }

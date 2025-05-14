@@ -29,9 +29,10 @@ import com.example.vkr.R
 @Composable
 fun WelcomeScreen(navController: NavController, viewModel: WelcomeViewModel = viewModel()) {
     val navEvent by viewModel.navEvent.collectAsState()
+
     LaunchedEffect(navEvent) {
-        navEvent?.let {
-            navController.navigate(it)
+        navEvent?.let { route ->
+            navController.navigate(route)
             viewModel.onNavigationHandled()
         }
     }
@@ -40,30 +41,66 @@ fun WelcomeScreen(navController: NavController, viewModel: WelcomeViewModel = vi
             .fillMaxSize()
             .background(Color.White)
     ) {
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
             Image(
                 painter = painterResource(id = R.drawable.gg11),
-                contentDescription = "Загрязнение",
+                contentDescription = "Изображение загрязнения",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
-            Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
-                Text("CleanTogether", style = MaterialTheme.typography.headlineMedium.copy(color = Color.White))
-                Text("Вместе за чистое будущее!", style = MaterialTheme.typography.bodyMedium.copy(color = Color.White))
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "CleanTogether",
+                    style = MaterialTheme.typography.headlineMedium.copy(color = Color.White)
+                )
+                Text(
+                    text = "Вместе за чистое будущее!",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                )
             }
         }
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
             Image(
                 painter = painterResource(id = R.drawable.ima1),
-                contentDescription = "Уборка",
+                contentDescription = "Изображение уборки",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
-            Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
-                Text("Субботники", style = MaterialTheme.typography.headlineMedium.copy(color = Color.White))
-                Text("Присоединяйся к командам и внеси свой вклад!", style = MaterialTheme.typography.bodyMedium.copy(color = Color.White))
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Субботники",
+                    style = MaterialTheme.typography.headlineMedium.copy(color = Color.White)
+                )
+                Text(
+                    text = "Присоединяйся к командам и внеси свой вклад!",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                )
             }
         }
         Column(
@@ -76,13 +113,13 @@ fun WelcomeScreen(navController: NavController, viewModel: WelcomeViewModel = vi
                 onClick = { viewModel.onSignUpClicked() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Создать аккаунт")
+                Text(text = "Создать аккаунт")
             }
             OutlinedButton(
                 onClick = { viewModel.onLoginClicked() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Войти")
+                Text(text = "Войти")
             }
         }
     }

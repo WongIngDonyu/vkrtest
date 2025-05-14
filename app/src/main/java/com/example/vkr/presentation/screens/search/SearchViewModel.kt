@@ -10,6 +10,8 @@ import androidx.navigation.NavController
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.TeamRepository
+import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,9 +19,8 @@ import kotlinx.coroutines.launch
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val context = application.applicationContext
-    private val teamDao = AppDatabase.getInstance(context).teamDao()
-    private val teamApi = RetrofitInstance.teamApi
+    private val repository: TeamRepository
+
     private val _teams = MutableStateFlow<List<TeamEntity>>(emptyList())
     val teams: StateFlow<List<TeamEntity>> = _teams.asStateFlow()
 
@@ -27,34 +28,17 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         private set
 
     init {
+        val context = application.applicationContext
+        val db = AppDatabase.getInstance(context)
+        repository = TeamRepository(teamDao = db.teamDao(), userDao = db.userDao(), eventDao = db.eventDao(), session = UserSessionManager(context)
+        )
         fetchAndObserveTeams()
     }
 
     private fun fetchAndObserveTeams() {
         viewModelScope.launch {
-            try {
-                val response = teamApi.getAllTeams()
-                if (response.isSuccessful) {
-                    val teamDTOs = response.body() ?: emptyList()
-                    val entities = teamDTOs.map {
-                        TeamEntity(
-                            id = it.id,
-                            name = it.name,
-                            color = it.color,
-                            areaPoints = it.areaPoints,
-                            points = it.points
-                        )
-                    }
-                    teamDao.insertTeams(entities)
-                } else {
-                    println("Ошибка загрузки команд: ${response.errorBody()?.string()}")
-                }
-            } catch (e: Exception) {
-                println("Ошибка запроса команд: ${e.localizedMessage}")
-            }
-            teamDao.getAllTeamsFlow().collect { teamList ->
-                _teams.value = teamList
-            }
+            repository.syncTeamsFromRemote()
+            repository.getTeamsFlow().collect { _teams.value = it }
         }
     }
 

@@ -37,14 +37,25 @@ fun ActivityItem(title: String, subtitle: String, isFavorite: Boolean, painter: 
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         IconButton(onClick = onFavoriteClick) {
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = "Избранное",
-                tint = if (isFavorite) Color(0xFF7A5EFF) else Color.LightGray
+                tint = if (isFavorite)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

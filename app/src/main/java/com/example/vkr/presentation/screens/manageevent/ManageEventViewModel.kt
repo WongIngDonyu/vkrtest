@@ -10,16 +10,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.EventRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ManageEventViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val context = application.applicationContext
-    private val eventDao = AppDatabase.getInstance(context).eventDao()
-    private val teamDao = AppDatabase.getInstance(context).teamDao()
-    private val eventApi = RetrofitInstance.eventApi
+    private val repository: EventRepository
 
     var event by mutableStateOf<EventEntity?>(null)
         private set
@@ -30,16 +28,17 @@ class ManageEventViewModel(application: Application) : AndroidViewModel(applicat
     var photoUris by mutableStateOf<List<Uri>>(emptyList())
         private set
 
+    init {
+        val context = application.applicationContext
+        repository = EventRepository(api = RetrofitInstance.eventApi, eventDao = AppDatabase.getInstance(context).eventDao(), teamDao = AppDatabase.getInstance(context).teamDao(), userDao = AppDatabase.getInstance(context).userDao())
+    }
+
     fun loadEvent(eventId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val loadedEvent = eventDao.getEventById(eventId)
-            val team = loadedEvent?.teamId?.let { id ->
-                teamDao.getAllTeams().firstOrNull { it.id == id }?.name ?: ""
-            } ?: ""
-
+            val (loadedEvent, loadedTeamName) = repository.getEventWithTeamName(eventId)
             withContext(Dispatchers.Main) {
                 event = loadedEvent
-                teamName = team
+                teamName = loadedTeamName
             }
         }
     }
@@ -49,22 +48,15 @@ class ManageEventViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun finishEvent(onSuccess: () -> Unit) {
-        val e = event ?: return
+        val currentEvent = event ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val response = eventApi.finishEvent(e.id)
-                if (response.isSuccessful) {
-                    val updated = e.copy(isFinished = true)
-                    eventDao.updateEvent(updated)
-                    withContext(Dispatchers.Main) {
-                        event = updated
-                        onSuccess()
-                    }
-                } else {
-                    println("Ошибка завершения события: ${response.code()}")
+            val success = repository.finishEvent(currentEvent)
+            if (success) {
+                val updated = currentEvent.copy(isFinished = true)
+                withContext(Dispatchers.Main) {
+                    event = updated
+                    onSuccess()
                 }
-            } catch (ex: Exception) {
-                println("Ошибка подключения: ${ex.localizedMessage}")
             }
         }
     }

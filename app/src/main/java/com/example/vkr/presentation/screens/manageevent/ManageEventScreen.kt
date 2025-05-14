@@ -32,6 +32,7 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
     val event = viewModel.event
     val teamName = viewModel.teamName
     val photoUris = viewModel.photoUris
+    val colorScheme = MaterialTheme.colorScheme
 
     LaunchedEffect(eventId) {
         viewModel.loadEvent(eventId)
@@ -42,7 +43,6 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
     ) { uris ->
         viewModel.onImagePicked(uris)
     }
-
     if (event != null) {
         Column(
             modifier = Modifier
@@ -68,10 +68,10 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
             Text(event.description, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
             Text("Место", style = MaterialTheme.typography.labelMedium)
-            Text(event.locationName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+            Text(event.locationName, style = MaterialTheme.typography.bodyLarge, color = colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(8.dp))
             Text("Команда", style = MaterialTheme.typography.labelMedium)
-            Text(teamName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+            Text(teamName, style = MaterialTheme.typography.bodyLarge, color = colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(24.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!event.isFinished) {
@@ -80,11 +80,11 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
                             modifier = Modifier
                                 .size(100.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0xFFF2EBFF))
+                                .background(colorScheme.surfaceVariant)
                                 .clickable { imagePickerLauncher.launch("image/*") },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("+", style = MaterialTheme.typography.headlineLarge, color = Color.Black)
+                            Text("+", style = MaterialTheme.typography.headlineLarge, color = colorScheme.onSurface)
                         }
                     }
                 }
@@ -108,9 +108,9 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF))
+                    colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)
                 ) {
-                    Text("Завершить мероприятие", color = Color.White)
+                    Text("Завершить мероприятие", color = colorScheme.onPrimary)
                 }
                 Spacer(Modifier.height(12.dp))
             }

@@ -29,7 +29,12 @@ import com.example.vkr.presentation.components.MyEventItem
 import kotlinx.coroutines.launch
 
 @Composable
-fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostState, navController: NavController, viewModel: EventsViewModel = viewModel()) {
+fun EventsScreen(
+    modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState,
+    navController: NavController,
+    viewModel: EventsViewModel = viewModel()
+) {
     val events = viewModel.filteredEvents
     val joinedEvents = viewModel.joinedEvents
     val organizedEvents = viewModel.organizedEvents
@@ -38,8 +43,9 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
     val selectedFilter = viewModel.selectedFilter
     val isOrganizer = viewModel.isOrganizer
     val scope = rememberCoroutineScope()
-    val allParticipantEvents = (joinedEvents + organizedEvents)
-        .distinctBy { it.id }
+    val allParticipantEvents = (joinedEvents + organizedEvents).distinctBy { it.id }
+    val colorScheme = MaterialTheme.colorScheme
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -48,6 +54,7 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
     ) {
         Text("Мероприятия", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(12.dp))
+
         OutlinedTextField(
             value = searchQuery,
             onValueChange = viewModel::onSearchChanged,
@@ -56,7 +63,9 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp)
         )
+
         Spacer(Modifier.height(12.dp))
+
         val filters = listOf("Все", "Сегодня", "На неделе", "В этом месяце")
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -67,13 +76,15 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isSelected) Color(0xFF7A5EFF) else Color(0xFFF2EBFF))
+                        .background(
+                            if (isSelected) colorScheme.primary else colorScheme.surfaceVariant
+                        )
                         .clickable { viewModel.onFilterSelected(label) }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = label,
-                        color = if (isSelected) Color.White else Color(0xFF7A5EFF),
+                        color = if (isSelected) colorScheme.onPrimary else colorScheme.primary,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1
@@ -81,9 +92,11 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
                 }
             }
         }
+
         Spacer(Modifier.height(16.dp))
         Text("Все мероприятия", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
+
         if (events.isNotEmpty()) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(events) { event ->
@@ -115,13 +128,15 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
             Text(
                 text = "Нет мероприятий по выбранному фильтру",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
+                color = colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
         }
+
         Spacer(Modifier.height(16.dp))
         Text("Вы участвуете", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
+
         if (allParticipantEvents.isNotEmpty()) {
             allParticipantEvents.forEach { event ->
                 MyEventItem(
@@ -145,11 +160,13 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
             Text(
                 text = "Вы пока не участвуете в мероприятиях",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
+                color = colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         }
+
         Spacer(Modifier.height(16.dp))
+
         if (isOrganizer) {
             Text("Твои мероприятия", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
@@ -166,12 +183,13 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
                 Text(
                     text = "У вас пока нет созданных мероприятий",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    color = colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
         }
     }
+
     selectedEvent?.let { event ->
         AlertDialog(
             onDismissRequest = viewModel::onDialogDismiss,
@@ -183,8 +201,8 @@ fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostS
             title = { Text(event.title, style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
-                    Text("${event.locationName}")
-                    Text("${event.dateTime}")
+                    Text(event.locationName)
+                    Text(event.dateTime)
                     Spacer(Modifier.height(8.dp))
                     Text(event.description)
                 }
@@ -205,8 +223,10 @@ fun EventCardItem(
     showJoinButton: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val isFinished = event.isFinished
-    val textColor = if (isFinished) Color.Gray else Color.Unspecified
+    val textColor = if (isFinished) colorScheme.onSurfaceVariant else colorScheme.onSurface
+
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -249,7 +269,7 @@ fun EventCardItem(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Присоединиться",
-                        tint = Color(0xFF7A5EFF)
+                        tint = colorScheme.primary
                     )
                 }
             }
@@ -258,7 +278,7 @@ fun EventCardItem(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Завершено",
-                color = Color.Red,
+                color = colorScheme.error,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold
             )

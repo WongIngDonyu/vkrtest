@@ -64,17 +64,23 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                     modifier = Modifier.matchParentSize()
                 )
                 Box(
-                    modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.4f))
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
                 )
                 Text(
                     text = t.name,
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp)
                 )
                 Column(
-                    modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp)
                 ) {
                     Text("Очки: ${t.points}", color = Color.White, fontWeight = FontWeight.SemiBold)
                     Text("Проведено мероприятий: ${events.size}", color = Color.White)
@@ -102,7 +108,7 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                                                 .width(140.dp)
                                                 .height(80.dp)
                                                 .clip(RoundedCornerShape(16.dp))
-                                                .background(Color(0xFFF0EFFF))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                                 .padding(12.dp),
                                             horizontalAlignment = Alignment.Start,
                                             verticalArrangement = Arrangement.Center
@@ -111,17 +117,19 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                                                 Image(
                                                     painter = rememberAsyncImagePainter(user.avatarUri),
                                                     contentDescription = null,
-                                                    modifier = Modifier.size(24.dp).clip(CircleShape)
+                                                    modifier = Modifier
+                                                        .size(24.dp)
+                                                        .clip(CircleShape)
                                                 )
                                             } else {
                                                 Icon(
                                                     imageVector = Icons.Default.Person,
                                                     contentDescription = null,
-                                                    tint = Color(0xFF673AB7),
+                                                    tint = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.size(24.dp)
                                                 )
                                             }
-                                            Text(user.name, color = Color(0xFF673AB7))
+                                            Text(user.name, color = MaterialTheme.colorScheme.primary)
                                         }
                                     }
                                 }
@@ -152,7 +160,7 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                                 },
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.elevatedCardColors(
-                                containerColor = if (event.isFinished) Color(0xFFE0E0E0) else MaterialTheme.colorScheme.surface
+                                containerColor = if (event.isFinished) Color.LightGray else MaterialTheme.colorScheme.surface
                             )
                         ) {
                             Column(Modifier.padding(12.dp)) {
@@ -181,7 +189,9 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                                 Spacer(Modifier.height(12.dp))
                                 Text(event.title, fontWeight = FontWeight.Medium)
                                 val parsed = DateTimeUtils.parseDisplayFormatted(event.dateTime)
-                                val formatted = parsed?.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))) ?: ""
+                                val formatted = parsed?.format(
+                                    DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
+                                ) ?: ""
                                 Text(formatted, color = Color.Gray)
                                 if (event.isFinished) {
                                     Spacer(Modifier.height(4.dp))
@@ -195,12 +205,18 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
             Spacer(Modifier.height(24.dp))
             when {
                 currentUser?.teamId == teamId -> {
-                    OutlinedButton(onClick = { viewModel.leaveTeam() }, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { viewModel.leaveTeam() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Покинуть команду")
                     }
                 }
                 currentUser?.teamId == null -> {
-                    Button(onClick = { viewModel.joinTeam() }, modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { viewModel.joinTeam() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Вступить в команду")
                     }
                 }
@@ -213,7 +229,10 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                 }
             }
             Spacer(Modifier.height(12.dp))
-            OutlinedButton(onClick = { navController.popBackStack() }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Назад")
             }
         }
@@ -229,9 +248,9 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
             title = { Text(event.title, style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
-                    Text("${event.locationName}")
-                    Text("${event.dateTime}")
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(event.locationName)
+                    Text(event.dateTime)
+                    Spacer(Modifier.height(8.dp))
                     Text(event.description)
                 }
             },

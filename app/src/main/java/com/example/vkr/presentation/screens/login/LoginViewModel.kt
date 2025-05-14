@@ -18,7 +18,7 @@ import com.example.vkr.data.repository.AuthRepository
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.launch
 
-class LoginViewModel(application: Application, private val session: UserSessionManager, private val userDao: UserDao) : AndroidViewModel(application) {
+class LoginViewModel(application: Application, private val repository: AuthRepository) : AndroidViewModel(application) {
 
     var phone by mutableStateOf("")
     var password by mutableStateOf("")
@@ -52,45 +52,10 @@ class LoginViewModel(application: Application, private val session: UserSessionM
         passwordError = !isPasswordValid
         if (!isPhoneValid || !isPasswordValid) return
         viewModelScope.launch {
-            try {
-                val repository = AuthRepository(RetrofitInstance.api)
-                val loginResponse = repository.login(UserLoginDTO(phone, password))
-                if (loginResponse.isSuccessful) {
-                    val userResponse = repository.getUserByPhone(phone)
-                    if (userResponse.isSuccessful) {
-                        val user = userResponse.body()!!
-                        val entity = UserEntity(
-                            id = user.id,
-                            name = user.name,
-                            nickname = user.nickname,
-                            phone = user.phone,
-                            role = user.role,
-                            points = user.points,
-                            eventCount = user.eventCount,
-                            avatarUri = user.avatarUri,
-                            teamId = user.teamId
-                        )
-                        userDao.insertUser(entity)
-                        val achievementRefs = listOf(
-                            UserAchievementCrossRef(user.id, 1),
-                            UserAchievementCrossRef(user.id, 2)
-                        )
-                        userDao.insertUserAchievementCrossRefs(achievementRefs)
-                        session.saveUser(user.phone, user.role)
-                        navigateToHome = true
-                    } else {
-                        println("Ошибка при получении данных пользователя: ${userResponse.errorBody()?.string()}")
-                        loginError = true
-                    }
-                } else if (loginResponse.code() == 401) {
-                    loginError = true
-                } else {
-                    println("Ошибка авторизации: ${loginResponse.errorBody()?.string()}")
-                    loginError = true
-                }
-            } catch (e: Exception) {
-                println("Ошибка подключения: ${e.localizedMessage}")
-                loginError = true
+            val success = repository.loginAndStoreUser(phone, password)
+            loginError = !success
+            if (success) {
+                navigateToHome = true
             }
         }
     }
@@ -107,7 +72,12 @@ class LoginViewModelFactory(
         if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
             val context = application.applicationContext
             val db = AppDatabase.getInstance(context)
-            return LoginViewModel(application, UserSessionManager(context), db.userDao()) as T
+            val repository = AuthRepository(
+                api = RetrofitInstance.api,
+                userDao = db.userDao(),
+                session = UserSessionManager(context)
+            )
+            return LoginViewModel(application, repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

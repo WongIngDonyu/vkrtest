@@ -22,7 +22,6 @@ fun SplashScreen(navController: NavHostController) {
     val context = LocalContext.current
     val viewModel: SplashViewModel = viewModel()
     val navigation = viewModel.shouldNavigate
-
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->

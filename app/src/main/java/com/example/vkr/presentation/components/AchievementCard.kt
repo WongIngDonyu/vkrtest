@@ -29,7 +29,15 @@ fun AchievementCard(title: String, subtitle: String, @DrawableRes imageRes: Int)
                 .clip(RoundedCornerShape(16.dp))
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = title, style = MaterialTheme.typography.bodyLarge)
-        Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

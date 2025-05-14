@@ -42,15 +42,14 @@ fun ProfileScreen(navController: NavController, modifier: Modifier = Modifier, v
     val events = viewModel.events
     val selectedEvent = viewModel.selectedEvent
     val selectedDateFilter = viewModel.selectedDateFilter
-    val currentBackStackEntry = navController.currentBackStackEntryAsState().value
+    val colorScheme = MaterialTheme.colorScheme
 
+    val currentBackStackEntry = navController.currentBackStackEntryAsState().value
     LaunchedEffect(currentBackStackEntry) {
         val shouldReload = currentBackStackEntry?.savedStateHandle?.get<Boolean>("reloadProfile") ?: false
         if (shouldReload) {
             viewModel.loadProfileFromDb()
-            if (currentBackStackEntry != null) {
-                currentBackStackEntry.savedStateHandle["reloadProfile"] = false
-            }
+            currentBackStackEntry?.savedStateHandle?.set("reloadProfile", false)
         }
     }
     val filteredEvents = events.filter { event ->
@@ -75,17 +74,23 @@ fun ProfileScreen(navController: NavController, modifier: Modifier = Modifier, v
                 modifier = Modifier
                     .size(72.dp)
                     .clip(CircleShape)
-                    .border(2.dp, Color.Gray, CircleShape),
+                    .border(2.dp, colorScheme.outline, CircleShape),
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(user?.name ?: "Имя", style = MaterialTheme.typography.titleLarge)
-                Text("@${user?.nickname ?: "ник"}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                Text(user?.role ?: "роль", style = MaterialTheme.typography.bodyMedium)
+                Text("@${user?.nickname ?: "ник"}", style = MaterialTheme.typography.bodySmall, color = colorScheme.onSurfaceVariant)
+                Text(
+                    when (user?.role) {
+                        "ORGANIZER" -> "Организатор"
+                        else -> "Пользователь"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Text(
                     team?.name?.let { "В команде: $it" } ?: "Без команды",
-                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
+                    style = MaterialTheme.typography.bodySmall.copy(color = colorScheme.onSurfaceVariant)
                 )
             }
         }
@@ -105,7 +110,7 @@ fun ProfileScreen(navController: NavController, modifier: Modifier = Modifier, v
         Spacer(modifier = Modifier.height(16.dp))
         Text("Мои мероприятия", style = MaterialTheme.typography.titleMedium)
         if (filteredEvents.isEmpty()) {
-            Text("Нет мероприятий по выбранному фильтру.", color = Color.Gray)
+            Text("Нет мероприятий по выбранному фильтру.", color = colorScheme.onSurfaceVariant)
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(filteredEvents) { event ->
@@ -124,15 +129,20 @@ fun ProfileScreen(navController: NavController, modifier: Modifier = Modifier, v
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             listOf("Предстоящие", "Прошедшие").forEach { label ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable {
-                    viewModel.selectDateFilter(label)
-                }) {
+                val selected = selectedDateFilter == label
+                val iconColor = if (selected) colorScheme.primary else colorScheme.onSurfaceVariant
+                val textColor = iconColor
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { viewModel.selectDateFilter(label) }
+                ) {
                     Icon(
                         imageVector = if (label == "Предстоящие") Icons.Default.CalendarToday else Icons.Default.History,
                         contentDescription = label,
-                        tint = if (selectedDateFilter == label) Color(0xFF7A5EFF) else Color.Gray
+                        tint = iconColor
                     )
-                    Text(label, style = MaterialTheme.typography.labelMedium.copy(color = if (selectedDateFilter == label) Color(0xFF7A5EFF) else Color.Gray))
+                    Text(label, style = MaterialTheme.typography.labelMedium.copy(color = textColor))
                 }
             }
         }
@@ -141,10 +151,10 @@ fun ProfileScreen(navController: NavController, modifier: Modifier = Modifier, v
             Button(
                 onClick = { navController.navigate("editProfile") },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A5EFF)),
+                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
                 shape = RoundedCornerShape(24.dp)
             ) {
-                Text("Редактировать", color = Color.White)
+                Text("Редактировать", color = colorScheme.onPrimary)
             }
             OutlinedButton(
                 onClick = { navController.navigate("settings") },
@@ -164,7 +174,10 @@ fun ProfileScreen(navController: NavController, modifier: Modifier = Modifier, v
                 }
             },
             title = {
-                Text(event.title + if (event.isFinished) " (Завершено)" else "", style = MaterialTheme.typography.headlineSmall)
+                Text(
+                    text = event.title + if (event.isFinished) " (Завершено)" else "",
+                    style = MaterialTheme.typography.headlineSmall
+                )
             },
             text = {
                 Column {

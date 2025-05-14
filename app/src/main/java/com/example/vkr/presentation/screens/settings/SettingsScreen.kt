@@ -16,6 +16,7 @@ import com.example.vkr.presentation.components.SettingToggle
 @Composable
 fun SettingsScreen(navController: NavController) {
     val viewModel: SettingsViewModel = viewModel()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -34,9 +35,11 @@ fun SettingsScreen(navController: NavController) {
         SettingToggle("Напоминания о мероприятиях", viewModel.remindersEnabled) {
             viewModel.onToggle("reminders", it)
         }
+
         Spacer(modifier = Modifier.height(32.dp))
         Text("Прочее", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(12.dp))
+
         SettingToggle("Геолокация", viewModel.locationEnabled) {
             viewModel.onToggle("location", it)
         }
@@ -46,6 +49,7 @@ fun SettingsScreen(navController: NavController) {
         SettingToggle("Тёмная тема", viewModel.darkModeEnabled) {
             viewModel.onToggle("dark", it)
         }
+
         Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = viewModel::onLogoutClick,
@@ -53,14 +57,15 @@ fun SettingsScreen(navController: NavController) {
                 .fillMaxWidth()
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF3B30),
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
             ),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text("Выйти из аккаунта")
         }
     }
+
     if (viewModel.showLogoutDialog) {
         AlertDialog(
             onDismissRequest = viewModel::onLogoutCancel,
@@ -85,4 +90,3 @@ fun SettingsScreen(navController: NavController) {
         )
     }
 }
-

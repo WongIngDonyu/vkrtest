@@ -10,6 +10,7 @@ import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.UserEventCrossRef
 import com.example.vkr.data.remote.RetrofitInstance
+import com.example.vkr.data.repository.EventRepository
 import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.ui.components.DateTimeUtils
 import kotlinx.coroutines.flow.firstOrNull
@@ -19,9 +20,15 @@ import java.time.LocalDate
 class EventsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val context = application.applicationContext
-    private val eventDao = AppDatabase.getInstance(context).eventDao()
-    private val userDao = AppDatabase.getInstance(context).userDao()
     private val session = UserSessionManager(context)
+
+    private val repository = EventRepository(
+        api = RetrofitInstance.eventApi,
+        eventDao = AppDatabase.getInstance(context).eventDao(),
+        teamDao = AppDatabase.getInstance(context).teamDao(),
+        userDao = AppDatabase.getInstance(context).userDao()
+    )
+
     private var userId: String? = null
 
     val currentUserId: String?
@@ -54,16 +61,14 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     var filteredEvents by mutableStateOf<List<EventEntity>>(emptyList())
         private set
 
-    private val eventApi = RetrofitInstance.eventApi
-
-
     init {
         viewModelScope.launch {
             val phone = session.userPhone.firstOrNull()
-            val user = phone?.let { userDao.getUserByPhone(it) }
+            val user = phone?.let { repository.getUserByPhone(it) }
             userId = user?.id
             isOrganizer = user?.role == "ORGANIZER"
-            eventDao.getAllEvents().collect { events ->
+
+            repository.getAllEventsFlow().collect { events ->
                 allEvents = events
                 applyFilters()
             }
@@ -89,24 +94,21 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun joinEvent(eventId: String, onSnackbar: (String) -> Unit) {
-        if (userId == null) return
+        val uid = userId ?: return
+        val event = allEvents.find { it.id == eventId } ?: return
+
+        if (event.creatorId == uid || joinedEvents.any { it.id == eventId }) return
 
         viewModelScope.launch {
-            val event = allEvents.find { it.id == eventId } ?: return@launch
-            val uid = userId!!
-
-            if (event.creatorId == uid || joinedEvents.any { it.id == eventId }) return@launch
-
             try {
-                val response = eventApi.joinEvent(eventId, uid)
-                if (response.isSuccessful || response.code() == 204) {
-                    userDao.insertUserEventCrossRef(UserEventCrossRef(uid, eventId))
+                val success = repository.joinEvent(uid, eventId)
+                if (success) {
                     joinedEvents = joinedEvents + event
                     otherEvents = otherEvents - event
                     onSnackbar("Вы присоединились к мероприятию!")
                     applyFilters()
                 } else {
-                    onSnackbar("Ошибка: ${response.code()}")
+                    onSnackbar("Не удалось присоединиться")
                 }
             } catch (e: Exception) {
                 onSnackbar("Ошибка подключения: ${e.localizedMessage}")
@@ -115,21 +117,21 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun leaveEvent(eventId: String, onSnackbar: (String) -> Unit) {
-        if (userId == null) return
+        val uid = userId ?: return
+        val event = allEvents.find { it.id == eventId } ?: return
+
+        if (event.creatorId == uid || event.isFinished) return
+
         viewModelScope.launch {
-            val event = allEvents.find { it.id == eventId } ?: return@launch
-            val uid = userId!!
-            if (event.creatorId == uid || event.isFinished) return@launch
             try {
-                val response = eventApi.leaveEvent(eventId, uid)
-                if (response.isSuccessful || response.code() == 204) {
-                    userDao.deleteUserEventCrossRef(uid, eventId)
+                val success = repository.leaveEvent(uid, eventId)
+                if (success) {
                     joinedEvents = joinedEvents - event
                     otherEvents = otherEvents + event
                     onSnackbar("Вы покинули мероприятие!")
                     applyFilters()
                 } else {
-                    onSnackbar("Ошибка: ${response.code()}")
+                    onSnackbar("Не удалось покинуть мероприятие")
                 }
             } catch (e: Exception) {
                 onSnackbar("Ошибка подключения: ${e.localizedMessage}")
@@ -149,21 +151,25 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
             }
             "На неделе" -> filtered.filter {
                 val date = DateTimeUtils.parseDisplayFormatted(it.dateTime)?.toLocalDate()
-                date != null && date.isAfter(now.minusDays(1)) && date.isBefore(now.plusDays(7))
+                date != null && date in now..now.plusDays(6)
             }
             "В этом месяце" -> filtered.filter {
                 DateTimeUtils.parseDisplayFormatted(it.dateTime)?.month == now.month
             }
             else -> filtered
         }
+
         filteredEvents = filteredByTime
+
         viewModelScope.launch {
             val uid = userId ?: return@launch
-            val userEventIds = userDao.getUserWithEventsOnce(uid)?.events?.map { it.id }?.toSet() ?: emptySet()
-            joinedEvents = filteredByTime.filter { it.id in userEventIds && it.creatorId != uid }
+            val userEvents = repository.getJoinedEventsForUser(uid)
+            joinedEvents = filteredByTime.filter { event ->
+                userEvents.any { it.id == event.id } && event.creatorId != uid
+            }
             organizedEvents = filteredByTime.filter { it.creatorId == uid }
             otherEvents = filteredByTime.filter {
-                it.id !in userEventIds && it.creatorId != uid
+                it.id !in joinedEvents.map { it.id } && it.creatorId != uid
             }
         }
     }
