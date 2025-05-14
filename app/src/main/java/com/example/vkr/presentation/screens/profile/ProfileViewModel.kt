@@ -1,22 +1,18 @@
 package com.example.vkr.presentation.screens.profile
 
 import android.app.Application
-import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.AchievementEntity
 import com.example.vkr.data.model.EventEntity
 import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.data.model.UserEntity
-import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,7 +55,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             val loadedTeam = loadedUser.teamId?.let { teamId ->
                 teamDao.getAllTeams().firstOrNull { team -> team.id == teamId }
             }
-
             withContext(Dispatchers.Main) {
                 user = loadedUser
                 achievements = loadedAchievements

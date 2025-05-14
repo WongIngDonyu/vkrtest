@@ -32,7 +32,6 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun fetchAndObserveTeams() {
         viewModelScope.launch {
-            // 1. Загрузить с сервера и сохранить в БД
             try {
                 val response = teamApi.getAllTeams()
                 if (response.isSuccessful) {
@@ -53,8 +52,6 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             } catch (e: Exception) {
                 println("Ошибка запроса команд: ${e.localizedMessage}")
             }
-
-            // 2. Подписаться на обновления из Room
             teamDao.getAllTeamsFlow().collect { teamList ->
                 _teams.value = teamList
             }

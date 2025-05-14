@@ -5,10 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.vkr.data.dao.UserDao
 import com.example.vkr.data.model.RegisterDTO
-import com.example.vkr.data.model.UserDTO
-import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.repository.AuthRepository
 import kotlinx.coroutines.launch
@@ -42,11 +39,8 @@ class SignUpViewModel : ViewModel() {
         phoneError = phone.isBlank() || !phone.matches(Regex("""\+?\d+"""))
         passwordError = password.isBlank()
         confirmPasswordError = password != confirmPassword
-
         if (listOf(nameError, nicknameError, phoneError, passwordError, confirmPasswordError).any { it }) return
-
         val user = RegisterDTO(name, nickname, phone, password)
-
         viewModelScope.launch {
             try {
                 val response = repository.register(user)

@@ -8,8 +8,5 @@ import retrofit2.http.Path
 
 interface UserApi {
     @PUT("users/{id}")
-    suspend fun updateUser(
-        @Path("id") id: String,
-        @Body user: UserDTO
-    ): Response<UserDTO>
+    suspend fun updateUser(@Path("id") id: String, @Body user: UserDTO): Response<UserDTO>
 }

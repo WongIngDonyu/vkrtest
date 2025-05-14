@@ -19,19 +19,8 @@ import com.example.vkr.data.dao.TeamDao
 import com.example.vkr.data.model.TeamEntity
 import com.google.gson.Gson
 import com.yandex.mapkit.geometry.Point
-import java.util.UUID
 
-@Database(
-    entities = [
-        UserEntity::class,
-        EventEntity::class,
-        UserEventCrossRef::class,
-        AchievementEntity::class,
-        UserAchievementCrossRef::class,
-        TeamEntity::class
-    ],
-    version = 1
-)
+@Database(entities = [UserEntity::class, EventEntity::class, UserEventCrossRef::class, AchievementEntity::class, UserAchievementCrossRef::class, TeamEntity::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun eventDao(): EventDao
@@ -52,7 +41,6 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
-
                             val appScope = CoroutineScope(Dispatchers.IO)
                             appScope.launch {
                                 val database = getInstance(context)
@@ -68,7 +56,6 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 
-    // 👇 Вставка достижений
     suspend fun populateInitialAchievements() {
         val achievements = listOf(
             AchievementEntity(title = "Эко Герой", description = "1000 баллов", imageResId = R.drawable.images),
@@ -76,13 +63,11 @@ abstract class AppDatabase : RoomDatabase() {
             AchievementEntity(title = "Защитник природы", description = "300 баллов", imageResId = R.drawable.images),
             AchievementEntity(title = "Охотник за мусором", description = "10 мероприятий", imageResId = R.drawable.l612f4bd3d34ba)
         )
-
         achievements.forEach {
             this.achievementDao().insertAchievement(it)
         }
     }
 
-    // 👇 Вставка команд
 //    suspend fun populateInitialTeams() {
 //        val teams = listOf(
 //            TeamEntity(
@@ -270,8 +255,6 @@ abstract class AppDatabase : RoomDatabase() {
 //        }
 //    }
 
-
-    // 👇 Сериализация списка координат в JSON
     private fun serializePoints(points: List<Point>): String {
         val list = points.map { mapOf("lat" to it.latitude, "lon" to it.longitude) }
         return Gson().toJson(list)

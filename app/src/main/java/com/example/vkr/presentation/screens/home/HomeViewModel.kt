@@ -21,11 +21,7 @@ import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
 
-class HomeViewModel(
-    private val eventDao: EventDao,
-    private val userDao: UserDao,
-    application: Application
-) : AndroidViewModel(application) {
+class HomeViewModel(private val eventDao: EventDao, private val userDao: UserDao, application: Application) : AndroidViewModel(application) {
 
     private val session = UserSessionManager(application.applicationContext)
 
@@ -45,7 +41,7 @@ class HomeViewModel(
             try {
                 repository.fetchAndSaveEvents()
             } catch (e: Exception) {
-                println("❗ Ошибка получения событий с сервера: ${e.localizedMessage}")
+                println("Ошибка получения событий с сервера: ${e.localizedMessage}")
             }
             loadEvents()
         }
@@ -57,11 +53,9 @@ class HomeViewModel(
             val user = phone?.let { userDao.getUserByPhone(it) }
             val joinedEvents = user?.id
                 ?.let { userDao.getUserWithEventsOnce(it)?.events }
-                ?.filter { !it.isFinished }  // ✅ фильтрация тут
+                ?.filter { !it.isFinished }
                 ?: emptyList()
-
             val counts = joinedEvents.associate { it.id to userDao.getUserCountForEvent(it.id) }
-
             withContext(Dispatchers.Main) {
                 state = state.copy(
                     allEvents = joinedEvents,
@@ -86,7 +80,7 @@ class HomeViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val updated = event.copy(isFavorite = !event.isFavorite)
             eventDao.updateEvent(updated)
-            loadEvents() // обновим всё заново
+            loadEvents()
         }
     }
 
@@ -104,9 +98,8 @@ class HomeViewModel(
             val user = phone?.let { userDao.getUserByPhone(it) }
             val joinedEvents = user?.id
                 ?.let { userDao.getUserWithEventsOnce(it)?.events }
-                ?.filter { !it.isFinished } // ✅ ещё раз фильтрация
+                ?.filter { !it.isFinished }
                 ?: emptyList()
-
             val filtered = when (state.selectedFilter) {
                 "Предстоящие" -> {
                     val now = LocalDate.now()
@@ -121,20 +114,16 @@ class HomeViewModel(
                 }
                 else -> joinedEvents
             }
-
             val searched = if (state.searchQuery.isNotBlank()) {
                 filtered.filter {
                     it.title.contains(state.searchQuery.trim(), ignoreCase = true)
                 }
             } else filtered
-
             state = state.copy(filteredEvents = searched, allEvents = joinedEvents)
         }
     }
 }
 
-
-// Make sure HomeViewState is defined
 data class HomeViewState(
     val allEvents: List<EventEntity> = emptyList(),
     val filteredEvents: List<EventEntity> = emptyList(),

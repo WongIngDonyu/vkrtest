@@ -1,16 +1,13 @@
 package com.example.vkr.presentation.screens.events
 
-import android.app.Application
 import android.net.Uri
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,37 +16,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
-import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.model.EventEntity
-import com.example.vkr.data.model.UserEntity
-import com.example.vkr.data.model.UserEventCrossRef
-import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.presentation.components.MyEventItem
-import com.example.vkr.ui.components.DateTimeUtils
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import java.io.File
 
 @Composable
-fun EventsScreen(
-    modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState,
-    navController: NavController,
-    viewModel: EventsViewModel = viewModel()
-) {
+fun EventsScreen(modifier: Modifier = Modifier, snackbarHostState: SnackbarHostState, navController: NavController, viewModel: EventsViewModel = viewModel()) {
     val events = viewModel.filteredEvents
     val joinedEvents = viewModel.joinedEvents
     val organizedEvents = viewModel.organizedEvents
@@ -58,11 +38,8 @@ fun EventsScreen(
     val selectedFilter = viewModel.selectedFilter
     val isOrganizer = viewModel.isOrganizer
     val scope = rememberCoroutineScope()
-
-    // 👇 Объединённый список участия
     val allParticipantEvents = (joinedEvents + organizedEvents)
         .distinctBy { it.id }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -71,7 +48,6 @@ fun EventsScreen(
     ) {
         Text("Мероприятия", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(12.dp))
-
         OutlinedTextField(
             value = searchQuery,
             onValueChange = viewModel::onSearchChanged,
@@ -80,9 +56,7 @@ fun EventsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp)
         )
-
         Spacer(Modifier.height(12.dp))
-
         val filters = listOf("Все", "Сегодня", "На неделе", "В этом месяце")
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -107,10 +81,7 @@ fun EventsScreen(
                 }
             }
         }
-
         Spacer(Modifier.height(16.dp))
-
-        // 🔹 Все мероприятия
         Text("Все мероприятия", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         if (events.isNotEmpty()) {
@@ -148,10 +119,7 @@ fun EventsScreen(
                 modifier = Modifier.padding(vertical = 16.dp)
             )
         }
-
         Spacer(Modifier.height(16.dp))
-
-        // 🔹 Вы участвуете
         Text("Вы участвуете", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         if (allParticipantEvents.isNotEmpty()) {
@@ -177,10 +145,7 @@ fun EventsScreen(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         }
-
         Spacer(Modifier.height(16.dp))
-
-        // 🔹 Твои мероприятия (только для организатора)
         if (isOrganizer) {
             Text("Твои мероприятия", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
@@ -189,7 +154,7 @@ fun EventsScreen(
                     MyEventItem(
                         event = event,
                         onClick = { viewModel.onEventClick(event) },
-                        onDelete = null // нельзя выйти из своих мероприятий
+                        onDelete = null
                     )
                     Spacer(Modifier.height(8.dp))
                 }
@@ -203,8 +168,6 @@ fun EventsScreen(
             }
         }
     }
-
-    // 🔹 Диалог с описанием мероприятия
     selectedEvent?.let { event ->
         AlertDialog(
             onDismissRequest = viewModel::onDialogDismiss,
@@ -216,8 +179,8 @@ fun EventsScreen(
             title = { Text(event.title, style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
-                    Text("📍 ${event.locationName}")
-                    Text("🗓 ${event.dateTime}")
+                    Text("${event.locationName}")
+                    Text("${event.dateTime}")
                     Spacer(Modifier.height(8.dp))
                     Text(event.description)
                 }
@@ -232,7 +195,7 @@ fun EventsScreen(
 @Composable
 fun EventCardItem(
     event: EventEntity,
-    painter: Painter, // 🔁 добавлено
+    painter: Painter,
     onClick: () -> Unit,
     onJoin: () -> Unit,
     showJoinButton: Boolean,
@@ -240,7 +203,6 @@ fun EventCardItem(
 ) {
     val isFinished = event.isFinished
     val textColor = if (isFinished) Color.Gray else Color.Unspecified
-
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -248,7 +210,7 @@ fun EventCardItem(
             .padding(8.dp)
     ) {
         Image(
-            painter = painter, // 🔁 теперь используется готовый painter
+            painter = painter,
             contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
@@ -257,7 +219,6 @@ fun EventCardItem(
             contentScale = ContentScale.Crop
         )
         Spacer(modifier = Modifier.height(8.dp))
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -276,7 +237,6 @@ fun EventCardItem(
                     color = textColor
                 )
             }
-
             if (showJoinButton && !isFinished) {
                 IconButton(
                     onClick = onJoin,
@@ -290,7 +250,6 @@ fun EventCardItem(
                 }
             }
         }
-
         if (isFinished) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(

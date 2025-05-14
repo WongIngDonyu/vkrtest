@@ -16,12 +16,7 @@ import androidx.compose.ui.draw.clip
 
 
 @Composable
-fun EventCard(
-    title: String,
-    painter: Painter,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
+fun EventCard(title: String, painter: Painter, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
             .width(160.dp)

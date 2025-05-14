@@ -1,6 +1,5 @@
 package com.example.vkr.presentation.screens.manageevent
 
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -10,11 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,23 +19,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.vkr.R
-import com.example.vkr.data.AppDatabase
-import com.example.vkr.data.model.EventEntity
-import com.example.vkr.data.model.TeamEntity
-import com.example.vkr.data.model.UserEntity
-import com.example.vkr.data.session.UserSessionManager
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun ManageEventScreen(eventId: String, navController: NavController) {
@@ -78,22 +61,17 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
                         .clip(RoundedCornerShape(16.dp))
                 )
             }
-
             Spacer(Modifier.height(16.dp))
             Text(event.title, style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(4.dp))
             Text(event.description, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
-
             Text("Место", style = MaterialTheme.typography.labelMedium)
             Text(event.locationName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
             Spacer(Modifier.height(8.dp))
-
             Text("Команда", style = MaterialTheme.typography.labelMedium)
             Text(teamName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
-
             Spacer(Modifier.height(24.dp))
-
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!event.isFinished) {
                     item {
@@ -109,7 +87,6 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
                         }
                     }
                 }
-
                 items(photoUris) { uri ->
                     Image(
                         painter = rememberAsyncImagePainter(uri),
@@ -121,9 +98,7 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
                     )
                 }
             }
-
             Spacer(Modifier.height(32.dp))
-
             if (!event.isFinished) {
                 Button(
                     onClick = {
@@ -136,10 +111,8 @@ fun ManageEventScreen(eventId: String, navController: NavController) {
                 ) {
                     Text("Завершить мероприятие", color = Color.White)
                 }
-
                 Spacer(Modifier.height(12.dp))
             }
-
             OutlinedButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.fillMaxWidth()

@@ -9,13 +9,13 @@ data class EventResponseDTO(
     val longitude: Double,
     val dateTime: String,
     val creatorId: String,
-    val teamId: String?,                  // ← teamId приходит отдельно
+    val teamId: String?,
     val imageUri: List<String>,
     val verified: Boolean,
     val confirmationComment: String?,
-    val teamName: String?,               // ← может прийти отдельно
+    val teamName: String?,
     val participantCount: Int,
-    val participant: List<String>?,      // ← может быть null
+    val participant: List<String>?,
     val rejected: Boolean,
     val finished: Boolean,
     val favorite: Boolean

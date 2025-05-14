@@ -9,14 +9,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.vkr.data.session.UserSessionManager
 import android.Manifest
 
 @Composable
@@ -30,10 +28,8 @@ fun SplashScreen(navController: NavHostController) {
     ) { permissions ->
         val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        // Здесь можно что-то логировать или обработать, если нужно
     }
 
-    // ⚠️ Запросим разрешения сразу при входе
     LaunchedEffect(Unit) {
         permissionLauncher.launch(
             arrayOf(
@@ -43,7 +39,6 @@ fun SplashScreen(navController: NavHostController) {
         )
     }
 
-    // Навигация
     LaunchedEffect(navigation) {
         when (navigation) {
             SplashViewModel.NavigationTarget.Main -> {
@@ -56,11 +51,10 @@ fun SplashScreen(navController: NavHostController) {
                     popUpTo(0)
                 }
             }
-            null -> {} // Ждём
+            null -> {}
         }
     }
 
-    // UI
     Box(
         modifier = Modifier
             .fillMaxSize()

@@ -21,3 +21,4 @@ class WelcomeViewModel : ViewModel() {
         _navEvent.value = null
     }
 }
+

@@ -13,12 +13,9 @@ fun copyImageToInternalStorage(context: Context, uri: Uri): String? {
         val fileName = "image_${UUID.randomUUID()}.jpg"
         val file = File(context.filesDir, fileName)
         val outputStream = FileOutputStream(file)
-
         inputStream?.copyTo(outputStream)
-
         inputStream?.close()
         outputStream.close()
-
         file.absolutePath
     } catch (e: Exception) {
         e.printStackTrace()

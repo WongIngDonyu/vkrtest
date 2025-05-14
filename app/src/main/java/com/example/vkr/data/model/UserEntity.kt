@@ -15,7 +15,7 @@ import androidx.room.*
     indices = [Index("teamId")]
 )
 data class UserEntity(
-    @PrimaryKey val id: String, // <-- UUID
+    @PrimaryKey val id: String,
     val name: String,
     val nickname: String,
     val phone: String,
@@ -23,5 +23,5 @@ data class UserEntity(
     val points: Int = 0,
     val eventCount: Int = 0,
     val teamId: String? = null,
-    val avatarUri: String? = null // 👤 путь к изображению профиля
+    val avatarUri: String? = null
 )

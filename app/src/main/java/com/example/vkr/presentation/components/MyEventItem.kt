@@ -33,22 +33,15 @@ import com.example.vkr.data.model.EventEntity
 import java.io.File
 
 @Composable
-fun MyEventItem(
-    event: EventEntity,
-    onClick: () -> Unit,
-    onDelete: (() -> Unit)? = null
-) {
+fun MyEventItem(event: EventEntity, onClick: () -> Unit, onDelete: (() -> Unit)? = null) {
     val isFinished = event.isFinished
     val titleColor = if (isFinished) Color.Gray else Color.Unspecified
     val dateColor = if (isFinished) Color.LightGray else Color.Gray
-
-    // 🔽 Выбор изображения
     val painter = if (!event.imageUri.isNullOrBlank()) {
         rememberAsyncImagePainter(Uri.parse(event.imageUri))
     } else {
-        painterResource(id = R.drawable.testew) // 👈 Заглушка
+        painterResource(id = R.drawable.testew)
     }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -64,9 +57,7 @@ fun MyEventItem(
                 .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop
         )
-
         Spacer(Modifier.width(8.dp))
-
         Column(Modifier.weight(1f)) {
             Text(
                 event.title,
@@ -87,7 +78,6 @@ fun MyEventItem(
                 )
             }
         }
-
         if (onDelete != null && !isFinished) {
             IconButton(onClick = onDelete) {
                 Icon(

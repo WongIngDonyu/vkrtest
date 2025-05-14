@@ -10,7 +10,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,11 +19,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavController
 import com.example.vkr.data.AppDatabase
 import com.example.vkr.ui.components.TeamArea
@@ -38,8 +35,6 @@ import com.yandex.mapkit.geometry.Polygon
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.InputListener
 import com.yandex.mapkit.map.PolygonMapObject
-import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.yandex.mapkit.map.Map
@@ -52,22 +47,17 @@ fun CreateEventScreen(navController: NavController) {
     val viewModel: CreateEventViewModel = viewModel(
         factory = CreateEventViewModelFactory(context.applicationContext as Application)
     )
-
     var launcher by remember {
         mutableStateOf<ManagedActivityResultLauncher<String, Uri?>?>(null)
     }
-
     val mapView = rememberMapViewWithLifecycle()
     val datePickerState = rememberDatePickerState()
     val timePickerState = rememberTimePickerState(initialHour = 12, initialMinute = 0, is24Hour = true)
     val state = viewModel.state
-
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.getDefault()) }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
-
     var teamAreas by remember { mutableStateOf<List<TeamArea>>(emptyList()) }
     val teamDao = remember { AppDatabase.getInstance(context).teamDao() }
-
     LaunchedEffect(Unit) {
         teamAreas = teamDao.getAllTeams().map {
             TeamArea(
@@ -78,11 +68,9 @@ fun CreateEventScreen(navController: NavController) {
             )
         }
     }
-
     launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         viewModel.onImagePicked(uri)
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -91,7 +79,6 @@ fun CreateEventScreen(navController: NavController) {
     ) {
         Text("Создание мероприятия", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
-
         OutlinedTextField(
             value = state.title,
             onValueChange = viewModel::onTitleChange,
@@ -100,9 +87,7 @@ fun CreateEventScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         if (state.titleError) Text("Поле не может быть пустым", color = Color.Red)
-
         Spacer(Modifier.height(12.dp))
-
         OutlinedTextField(
             value = state.description,
             onValueChange = viewModel::onDescriptionChange,
@@ -111,21 +96,16 @@ fun CreateEventScreen(navController: NavController) {
                 .fillMaxWidth()
                 .height(100.dp)
         )
-
         Spacer(Modifier.height(12.dp))
-
         OutlinedTextField(
             value = state.location,
             onValueChange = viewModel::onLocationChange,
             label = { Text("Место проведения") },
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(Modifier.height(12.dp))
-
         Text("Выберите место на карте:", style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(8.dp))
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -144,11 +124,9 @@ fun CreateEventScreen(navController: NavController) {
                         mapView.map.isScrollGesturesEnabled = true
                         mapView.map.isRotateGesturesEnabled = false
                         mapView.map.isTiltGesturesEnabled = false
-
                         val polygons = mutableMapOf<PolygonMapObject, TeamArea>()
                         val mapObjects = mapView.map.mapObjects
                         mapObjects.clear()
-
                         teamAreas.forEach { area ->
                             if (area.points.size >= 3) {
                                 val polygon = Polygon(LinearRing(area.points), emptyList())
@@ -163,7 +141,6 @@ fun CreateEventScreen(navController: NavController) {
                                 mapObjects.addPlacemark(center).setText(area.teamName)
                             }
                         }
-
                         mapView.map.addInputListener(object : InputListener {
                             override fun onMapTap(map: Map, point: Point) {
                                 polygons.entries.firstOrNull {
@@ -172,17 +149,14 @@ fun CreateEventScreen(navController: NavController) {
                                     viewModel.onTeamSelected(it.value.teamId)
                                 }
                             }
-
                             override fun onMapLongTap(map: Map, point: Point) {}
                         })
-
                         mapView
                     },
                     modifier = Modifier.matchParentSize()
                 )
             }
         }
-
         Spacer(Modifier.height(8.dp))
         Text(
             text = if (!state.selectedTeamName.isNullOrBlank())
@@ -192,36 +166,28 @@ fun CreateEventScreen(navController: NavController) {
             style = MaterialTheme.typography.bodyMedium,
             color = if (state.selectedTeamName != null) Color(0xFF7A5EFF) else Color.Gray
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
         OutlinedButton(
             onClick = { viewModel.onPickDate() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(state.selectedDate?.format(dateFormatter) ?: "Выбрать дату")
         }
-
         Spacer(modifier = Modifier.height(12.dp))
-
         OutlinedButton(
             onClick = { viewModel.onPickTime() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(state.selectedTime?.format(timeFormatter) ?: "Выбрать время")
         }
-
         Spacer(modifier = Modifier.height(12.dp))
-
         OutlinedButton(
             onClick = { launcher?.launch("image/*") },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (state.imageUri != null) "Выбрано" else "Выбрать фото")
         }
-
         Spacer(modifier = Modifier.height(24.dp))
-
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = {
@@ -234,7 +200,6 @@ fun CreateEventScreen(navController: NavController) {
             ) {
                 Text("Создать", color = Color.White)
             }
-
             OutlinedButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.weight(1f)
@@ -243,7 +208,6 @@ fun CreateEventScreen(navController: NavController) {
             }
         }
     }
-
     if (state.showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { viewModel.onDismissDate() },
@@ -263,7 +227,6 @@ fun CreateEventScreen(navController: NavController) {
             DatePicker(state = datePickerState, modifier = Modifier.fillMaxWidth())
         }
     }
-
     if (state.showTimePicker) {
         AlertDialog(
             onDismissRequest = { viewModel.onDismissTime() },

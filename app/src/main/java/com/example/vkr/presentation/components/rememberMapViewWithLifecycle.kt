@@ -17,7 +17,6 @@ fun rememberMapViewWithLifecycle(): MapView {
         MapKitFactory.initialize(context.applicationContext)
         MapView(context)
     }
-
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, mapView) {
         val observer = object : DefaultLifecycleObserver {
@@ -25,18 +24,15 @@ fun rememberMapViewWithLifecycle(): MapView {
                 MapKitFactory.getInstance().onStart()
                 mapView.onStart()
             }
-
             override fun onStop(owner: LifecycleOwner) {
                 mapView.onStop()
                 MapKitFactory.getInstance().onStop()
             }
         }
-
         lifecycle.addObserver(observer)
         onDispose {
             lifecycle.removeObserver(observer)
         }
     }
-
     return mapView
 }

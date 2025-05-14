@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,12 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun EventCard2(
-    title: String,
-    datePlace: String,
-    painter: Painter,
-    onClick: () -> Unit
-) {
+fun EventCard2(title: String, datePlace: String, painter: Painter, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .width(200.dp)

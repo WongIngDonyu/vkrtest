@@ -1,18 +1,9 @@
 package com.example.vkr.ui.components
 
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.yandex.mapkit.geometry.Point
-import com.yandex.mapkit.geometry.Polygon
-import com.yandex.mapkit.geometry.LinearRing
 import org.json.JSONArray
 
-data class TeamArea(
-    val teamId: String,
-    val teamName: String,
-    val points: List<Point>,
-    val color: Int
-)
+data class TeamArea(val teamId: String, val teamName: String, val points: List<Point>, val color: Int)
 
 fun parsePoints(json: String): List<Point> {
     val jsonArray = JSONArray(json)

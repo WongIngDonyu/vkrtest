@@ -7,10 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Event
@@ -22,36 +20,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
-import com.example.vkr.data.AppDatabase
-import com.example.vkr.data.model.UserEntity
-import com.example.vkr.data.session.UserSessionManager
-import com.example.vkr.data.model.EventEntity
 import com.example.vkr.presentation.components.AchievementCard
 import com.example.vkr.presentation.components.EventCard2
 import com.example.vkr.presentation.components.StatCard
 import com.example.vkr.ui.components.DateTimeUtils
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Composable
-fun ProfileScreen(
-    navController: NavController,
-    modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = viewModel()
-) {
+fun ProfileScreen(navController: NavController, modifier: Modifier = Modifier, viewModel: ProfileViewModel = viewModel()) {
     val user = viewModel.user
     val team = viewModel.team
     val achievements = viewModel.achievements
@@ -77,16 +61,13 @@ fun ProfileScreen(
             else -> true
         }
     }
-
     val avatarPainter = if (!user?.avatarUri.isNullOrBlank()) {
         rememberAsyncImagePainter(Uri.parse(user?.avatarUri))
     } else {
         painterResource(R.drawable.images)
     }
-
     Column(modifier = modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(modifier = Modifier.height(16.dp))
-
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = avatarPainter,
@@ -108,27 +89,21 @@ fun ProfileScreen(
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
         Text("Достижения", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
-
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(achievements) {
                 AchievementCard(it.title, it.description, it.imageResId)
             }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
-
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StatCard("Очков", user?.points?.toString() ?: "0", Icons.Default.Star)
             StatCard("Мероприятий", user?.eventCount?.toString() ?: "0", Icons.Default.Event)
         }
-
         Spacer(modifier = Modifier.height(16.dp))
         Text("Мои мероприятия", style = MaterialTheme.typography.titleMedium)
-
         if (filteredEvents.isEmpty()) {
             Text("Нет мероприятий по выбранному фильтру.", color = Color.Gray)
         } else {
@@ -146,7 +121,6 @@ fun ProfileScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             listOf("Предстоящие", "Прошедшие").forEach { label ->
@@ -162,7 +136,6 @@ fun ProfileScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
@@ -173,7 +146,6 @@ fun ProfileScreen(
             ) {
                 Text("Редактировать", color = Color.White)
             }
-
             OutlinedButton(
                 onClick = { navController.navigate("settings") },
                 modifier = Modifier.weight(1f),
@@ -183,7 +155,6 @@ fun ProfileScreen(
             }
         }
     }
-
     selectedEvent?.let { event ->
         AlertDialog(
             onDismissRequest = viewModel::closeDialog,

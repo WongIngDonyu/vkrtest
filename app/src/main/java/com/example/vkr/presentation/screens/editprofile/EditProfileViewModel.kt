@@ -66,7 +66,6 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                         avatarUri = userDto.avatarUri,
                         teamId = userDto.teamId
                     )
-
                     withContext(Dispatchers.Main) {
                         user = loadedUser
                         fullName = loadedUser.name
@@ -81,7 +80,6 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
             }
         }
     }
-
     fun save(onSuccess: () -> Unit) {
         val validationResult = validate()
         if (validationResult != null || user == null) {
@@ -89,31 +87,27 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
             usernameError = validationResult == "username"
             return
         }
-
         viewModelScope.launch(Dispatchers.IO) {
             val avatarPath = avatarUri?.let {
                 copyImageToInternalStorage(context, it)
             } ?: user!!.avatarUri
-
             val updatedDto = UserDTO(
                 id = user!!.id,
                 name = fullName,
                 nickname = username,
-                phone = user!!.phone, // номер не редактируется
+                phone = user!!.phone,
                 role = user!!.role,
                 points = user!!.points,
                 eventCount = user!!.eventCount,
                 avatarUri = avatarPath,
                 teamId = user!!.teamId
             )
-
             try {
                 val response = RetrofitInstance.userApi.updateUser(user!!.id, updatedDto)
                 if (response.isSuccessful) {
                     val updatedUserDto = response.body()
                     if (updatedUserDto != null) {
                         session.saveUser(updatedUserDto.phone, updatedUserDto.role)
-
                         val updatedUser = UserEntity(
                             id = updatedUserDto.id,
                             name = updatedUserDto.name,
@@ -125,13 +119,8 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                             avatarUri = updatedUserDto.avatarUri,
                             teamId = updatedUserDto.teamId
                         )
-
-                        // 💾 Сохраняем в локальную базу
                         userDao.updateUser(updatedUser)
-
-                        // Обновляем ViewModel
                         loadUserByPhone(updatedUser.phone)
-
                         withContext(Dispatchers.Main) {
                             onSuccess()
                         }

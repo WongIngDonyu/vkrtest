@@ -12,16 +12,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun FilterCard(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
+fun FilterCard(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (selected) Color(0xFF7A5EFF) else Color(0xFFF2EBFF)
     val iconTint = if (selected) Color.White else Color(0xFF7A5EFF)
     val textColor = if (selected) Color.White else Color(0xFF7A5EFF)
-
     Surface(
         color = backgroundColor,
         shape = RoundedCornerShape(16.dp),

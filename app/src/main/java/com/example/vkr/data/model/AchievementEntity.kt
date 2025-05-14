@@ -8,5 +8,5 @@ data class AchievementEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
     val description: String,
-    val imageResId: Int // ресурс для иконки достижения
+    val imageResId: Int
 )

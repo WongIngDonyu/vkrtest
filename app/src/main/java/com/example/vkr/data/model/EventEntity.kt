@@ -11,12 +11,12 @@ import androidx.room.PrimaryKey
             entity = TeamEntity::class,
             parentColumns = ["id"],
             childColumns = ["teamId"],
-            onDelete = ForeignKey.SET_NULL // если команду удалить, команда у события обнулится
+            onDelete = ForeignKey.SET_NULL
         )
     ]
 )
 data class EventEntity(
-    @PrimaryKey val id: String, // <-- UUID
+    @PrimaryKey val id: String,
     val title: String,
     val description: String,
     val locationName: String,
@@ -27,5 +27,5 @@ data class EventEntity(
     val isFavorite: Boolean = false,
     val teamId: String? = null,
     val imageUri: String? = null,
-    val isFinished: Boolean = false // ✅ новое поле
+    val isFinished: Boolean = false
 )

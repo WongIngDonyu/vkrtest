@@ -94,7 +94,6 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
             )
         }
     }
-
     fun onCreateEvent(onSuccess: () -> Unit) {
         val st = state
         val title = st.title.trim()
@@ -102,21 +101,16 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
             state = st.copy(titleError = true)
             return
         }
-
         val date = st.selectedDate ?: return
         val time = st.selectedTime ?: return
         val dateTime = LocalDateTime.of(date, time)
         val formattedDateTime = DateTimeUtils.formatDisplay(dateTime)
-
         viewModelScope.launch {
             val phone = session.userPhone.first() ?: return@launch
             val user = userDao.getUserByPhone(phone) ?: return@launch
-
             val imagePath = st.imageUri?.let { copyImageToInternalStorage(context, it) }
-
             val fallbackTeamId: String? = user.teamId
             val finalTeamId = st.selectedTeamId ?: fallbackTeamId
-
             val dto = EventRequestDTO(
                 title = title,
                 description = st.description,
@@ -125,10 +119,9 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                 longitude = 37.0,
                 dateTime = formattedDateTime,
                 creatorId = user.id,
-                teamId = finalTeamId, // ⬅ здесь ID
+                teamId = finalTeamId,
                 imageUri = listOfNotNull(imagePath)
             )
-
             try {
                 val response = RetrofitInstance.eventApi.createEvent(dto)
                 if (response.isSuccessful) {
@@ -143,7 +136,7 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                             longitude = serverEvent.longitude,
                             dateTime = serverEvent.dateTime,
                             creatorId = serverEvent.creatorId,
-                            teamId = serverEvent.teamId, // ⬅ сохрани ID
+                            teamId = serverEvent.teamId,
                             imageUri = serverEvent.imageUri.firstOrNull(),
                             isFinished = serverEvent.finished
                         )
@@ -151,12 +144,11 @@ class CreateEventViewModel(application: Application) : AndroidViewModel(applicat
                         userDao.insertUserEventCrossRef(UserEventCrossRef(user.id, localEvent.id))
              }
                 } else {
-                    println("❗ Ошибка при отправке события: ${response.errorBody()?.string()}")
+                    println("Ошибка при отправке события: ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
-                println("❗ Ошибка подключения при отправке события: ${e.localizedMessage}")
+                println("Ошибка подключения при отправке события: ${e.localizedMessage}")
             }
-
             onSuccess()
         }
     }

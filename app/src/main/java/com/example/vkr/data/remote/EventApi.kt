@@ -18,16 +18,10 @@ interface EventApi {
     suspend fun getAllEvents(): Response<List<EventResponseDTO>>
 
     @POST("/events/{eventId}/join/{userId}")
-    suspend fun joinEvent(
-        @Path("eventId") eventId: String,
-        @Path("userId") userId: String
-    ): Response<Void>
+    suspend fun joinEvent(@Path("eventId") eventId: String, @Path("userId") userId: String): Response<Void>
 
     @DELETE("/events/{eventId}/leave/{userId}")
-    suspend fun leaveEvent(
-        @Path("eventId") eventId: String,
-        @Path("userId") userId: String
-    ): Response<Void>
+    suspend fun leaveEvent(@Path("eventId") eventId: String, @Path("userId") userId: String): Response<Void>
 
     @GET("/events/team/{teamId}")
     suspend fun getEventsByTeam(@Path("teamId") teamId: String): Response<List<EventResponseDTO>>

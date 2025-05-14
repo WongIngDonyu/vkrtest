@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.presentation.screens.events.EventsScreen
 import com.example.vkr.presentation.screens.home.HomeScreen
@@ -36,7 +35,6 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
     val context = LocalContext.current
     val session = remember { UserSessionManager(context) }
     val role by session.userRole.collectAsState(initial = null)
-
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
@@ -76,7 +74,7 @@ fun MainScreen(currentRoute: String, navController: NavHostController) {
             "events" -> EventsScreen(
                 modifier = Modifier.padding(padding),
                 snackbarHostState = snackbarHostState,
-                navController = navController // если нужен
+                navController = navController
             )
             "profile" -> ProfileScreen(navController, Modifier.padding(padding))
         }

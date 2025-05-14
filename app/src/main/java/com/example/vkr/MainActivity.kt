@@ -6,11 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.navigation.RootNavGraph
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -21,7 +18,6 @@ class MainActivity : ComponentActivity() {
 //        lifecycleScope.launch {
 //            session.clearSession()
 //        }
-
         setContent {
             MaterialTheme {
                 val navController = rememberNavController()

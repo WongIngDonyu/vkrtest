@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,15 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
-import com.example.vkr.data.AppDatabase
-import com.example.vkr.data.model.EventEntity
-import com.example.vkr.data.model.TeamEntity
-import com.example.vkr.data.model.UserEntity
-import com.example.vkr.data.session.UserSessionManager
 import com.example.vkr.ui.components.DateTimeUtils
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -59,7 +50,6 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Header
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -89,13 +79,9 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                     Text("Проведено мероприятий: ${events.size}", color = Color.White)
                 }
             }
-
             Spacer(Modifier.height(16.dp))
-
-            // Users
             Text("Участники команды", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-
             if (users.isEmpty()) {
                 Text("Пока нет участников", style = MaterialTheme.typography.bodyMedium)
             } else {
@@ -145,11 +131,8 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
             }
 
             Spacer(Modifier.height(24.dp))
-
-            // Events
             Text("Мероприятия команды", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-
             if (events.isEmpty()) {
                 Text("Пока нет мероприятий", style = MaterialTheme.typography.bodyMedium)
             } else {
@@ -194,7 +177,6 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                                         Text("Нет фото", color = Color.DarkGray)
                                     }
                                 }
-
                                 Spacer(Modifier.height(12.dp))
                                 Text(event.title, fontWeight = FontWeight.Medium)
                                 val parsed = DateTimeUtils.parseDisplayFormatted(event.dateTime)
@@ -209,10 +191,7 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                     }
                 }
             }
-
             Spacer(Modifier.height(24.dp))
-
-            // Buttons
             when {
                 currentUser?.teamId == teamId -> {
                     OutlinedButton(onClick = { viewModel.leaveTeam() }, modifier = Modifier.fillMaxWidth()) {
@@ -232,16 +211,12 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
                     )
                 }
             }
-
             Spacer(Modifier.height(12.dp))
-
             OutlinedButton(onClick = { navController.popBackStack() }, modifier = Modifier.fillMaxWidth()) {
                 Text("Назад")
             }
         }
     }
-
-    // Dialog for non-creators
     selectedEvent?.let { event ->
         AlertDialog(
             onDismissRequest = viewModel::onDialogClose,
@@ -253,8 +228,8 @@ fun TeamDetailScreen(teamId: String, navController: NavController) {
             title = { Text(event.title, style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
-                    Text("📍 ${event.locationName}")
-                    Text("🗓 ${event.dateTime}")
+                    Text("${event.locationName}")
+                    Text("${event.dateTime}")
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(event.description)
                 }

@@ -19,7 +19,7 @@ class ManageEventViewModel(application: Application) : AndroidViewModel(applicat
     private val context = application.applicationContext
     private val eventDao = AppDatabase.getInstance(context).eventDao()
     private val teamDao = AppDatabase.getInstance(context).teamDao()
-    private val eventApi = RetrofitInstance.eventApi // добавь это
+    private val eventApi = RetrofitInstance.eventApi
 
     var event by mutableStateOf<EventEntity?>(null)
         private set
@@ -56,16 +56,15 @@ class ManageEventViewModel(application: Application) : AndroidViewModel(applicat
                 if (response.isSuccessful) {
                     val updated = e.copy(isFinished = true)
                     eventDao.updateEvent(updated)
-
                     withContext(Dispatchers.Main) {
-                        event = updated // обновим UI
+                        event = updated
                         onSuccess()
                     }
                 } else {
-                    println("❗ Ошибка завершения события: ${response.code()}")
+                    println("Ошибка завершения события: ${response.code()}")
                 }
             } catch (ex: Exception) {
-                println("❗ Ошибка подключения: ${ex.localizedMessage}")
+                println("Ошибка подключения: ${ex.localizedMessage}")
             }
         }
     }

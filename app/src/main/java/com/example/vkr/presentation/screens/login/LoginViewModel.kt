@@ -15,20 +15,14 @@ import com.example.vkr.data.model.UserEntity
 import com.example.vkr.data.model.UserLoginDTO
 import com.example.vkr.data.remote.RetrofitInstance
 import com.example.vkr.data.repository.AuthRepository
-import com.example.vkr.data.repository.TeamRepository
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.launch
 
-class LoginViewModel(
-    application: Application,
-    private val session: UserSessionManager,
-    private val userDao: UserDao
-) : AndroidViewModel(application) {
+class LoginViewModel(application: Application, private val session: UserSessionManager, private val userDao: UserDao) : AndroidViewModel(application) {
 
     var phone by mutableStateOf("")
     var password by mutableStateOf("")
     var isPasswordVisible by mutableStateOf(false)
-
     var phoneError by mutableStateOf(false)
     var passwordError by mutableStateOf(false)
     var loginError by mutableStateOf(false)
@@ -54,24 +48,17 @@ class LoginViewModel(
     fun onLoginClick() {
         val isPhoneValid = phone.isNotBlank() && phone.matches(Regex("""\+?\d+"""))
         val isPasswordValid = password.isNotBlank()
-
         phoneError = !isPhoneValid
         passwordError = !isPasswordValid
-
         if (!isPhoneValid || !isPasswordValid) return
-
         viewModelScope.launch {
             try {
                 val repository = AuthRepository(RetrofitInstance.api)
                 val loginResponse = repository.login(UserLoginDTO(phone, password))
-
                 if (loginResponse.isSuccessful) {
                     val userResponse = repository.getUserByPhone(phone)
-
                     if (userResponse.isSuccessful) {
                         val user = userResponse.body()!!
-
-                        // сохраняем в Room
                         val entity = UserEntity(
                             id = user.id,
                             name = user.name,
@@ -89,22 +76,18 @@ class LoginViewModel(
                             UserAchievementCrossRef(user.id, 2)
                         )
                         userDao.insertUserAchievementCrossRefs(achievementRefs)
-                        // сохраняем ключевые данные в сессию
                         session.saveUser(user.phone, user.role)
-
                         navigateToHome = true
                     } else {
                         println("Ошибка при получении данных пользователя: ${userResponse.errorBody()?.string()}")
                         loginError = true
                     }
-
                 } else if (loginResponse.code() == 401) {
                     loginError = true
                 } else {
                     println("Ошибка авторизации: ${loginResponse.errorBody()?.string()}")
                     loginError = true
                 }
-
             } catch (e: Exception) {
                 println("Ошибка подключения: ${e.localizedMessage}")
                 loginError = true

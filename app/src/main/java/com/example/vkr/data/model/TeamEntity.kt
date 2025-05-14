@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "teams")
 data class TeamEntity(
-    @PrimaryKey val id: String, // <-- UUID
+    @PrimaryKey val id: String,
     val name: String,
-    val color: Int, // Цвет команды
-    val areaPoints: String, // Сериализованные координаты полигона
-    val points: Int = 0 // Новое поле: количество очков
+    val color: Int,
+    val areaPoints: String,
+    val points: Int = 0
 )

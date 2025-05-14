@@ -10,7 +10,7 @@ object RetrofitInstance {
     private const val BASE_URL = "http://10.0.2.2:8080"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY // Показывает тело запроса и ответа
+        level = HttpLoggingInterceptor.Level.BODY
     }
 
     private val okHttpClient = OkHttpClient.Builder()
@@ -20,7 +20,7 @@ object RetrofitInstance {
     val api: AuthApi by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttpClient) // 👈 подключаем клиент с логами
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApi::class.java)
@@ -29,7 +29,7 @@ object RetrofitInstance {
     val eventApi: EventApi by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttpClient) // 👈 используем тот же логирующий клиент
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(EventApi::class.java)

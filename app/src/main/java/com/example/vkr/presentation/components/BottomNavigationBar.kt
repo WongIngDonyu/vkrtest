@@ -19,7 +19,6 @@ fun BottomNavigationBar(navController: NavController, currentRoute: String) {
         BottomNavItem("events", Icons.Default.DateRange, "Мероприятия"),
         BottomNavItem("profile", Icons.Default.Person, "Профиль")
     )
-
     NavigationBar(containerColor = Color.White) {
         items.forEach { item ->
             NavigationBarItem(
@@ -48,11 +47,4 @@ data class BottomNavItem(
     val route: String,
     val icon: ImageVector,
     val label: String
-)
-
-val bottomNavItems = listOf(
-    BottomNavItem("home", Icons.Default.Home, "Главная"),
-    BottomNavItem("search", Icons.Default.Search, "Поиск"),
-    BottomNavItem("events", Icons.Default.DateRange, "Мероприятия"),
-    BottomNavItem("profile", Icons.Default.Person, "Профиль")
 )

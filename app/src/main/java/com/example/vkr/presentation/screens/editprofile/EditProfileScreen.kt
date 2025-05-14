@@ -8,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
@@ -21,14 +20,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.vkr.R
-import com.example.vkr.data.AppDatabase
 import com.example.vkr.data.session.UserSessionManager
 import kotlinx.coroutines.launch
 
@@ -43,19 +40,16 @@ fun EditProfileScreen(navController: NavController) {
     LaunchedEffect(phone) {
         phone?.let { viewModel.loadUserByPhone(it) }
     }
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         viewModel.onAvatarChange(uri)
     }
-
     val avatarPainter = when {
         viewModel.avatarUri != null -> rememberAsyncImagePainter(viewModel.avatarUri)
         !viewModel.user?.avatarUri.isNullOrEmpty() -> rememberAsyncImagePainter(Uri.parse(viewModel.user!!.avatarUri))
         else -> painterResource(id = R.drawable.images)
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,7 +59,6 @@ fun EditProfileScreen(navController: NavController) {
         Text("Редактирование профиля", style = MaterialTheme.typography.headlineSmall)
         Text("Обновите ваши данные", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
         Spacer(modifier = Modifier.height(16.dp))
-
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -81,16 +74,13 @@ fun EditProfileScreen(navController: NavController) {
                 contentScale = ContentScale.Crop
             )
         }
-
         TextButton(
             onClick = { imagePickerLauncher.launch("image/*") },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Изменить фото")
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
         OutlinedTextField(
             value = viewModel.fullName,
             onValueChange = viewModel::onFullNameChange,
@@ -100,9 +90,7 @@ fun EditProfileScreen(navController: NavController) {
         )
         if (viewModel.fullNameError)
             Text("Имя не может быть пустым", color = Color.Red, fontSize = 12.sp)
-
         Spacer(modifier = Modifier.height(12.dp))
-
         OutlinedTextField(
             value = viewModel.username,
             onValueChange = viewModel::onUsernameChange,
@@ -112,28 +100,22 @@ fun EditProfileScreen(navController: NavController) {
         )
         if (viewModel.usernameError)
             Text("Минимум 3 символа", color = Color.Red, fontSize = 12.sp)
-
         Spacer(modifier = Modifier.height(12.dp))
-
         OutlinedTextField(
             value = viewModel.phone,
-            onValueChange = {}, // нельзя редактировать
+            onValueChange = {},
             label = { Text("Телефон") },
             readOnly = true,
-            enabled = false, // делает поле визуально "выключенным"
+            enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(modifier = Modifier.height(24.dp))
-
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Badge, contentDescription = "Роль", tint = Color.Gray)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Роль: ${viewModel.user?.role ?: "неизвестна"}", style = MaterialTheme.typography.bodyMedium)
         }
-
         Spacer(modifier = Modifier.height(32.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -155,7 +137,6 @@ fun EditProfileScreen(navController: NavController) {
             ) {
                 Text("Сохранить", color = Color.White)
             }
-
             OutlinedButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.weight(1f)

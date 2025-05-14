@@ -30,12 +30,6 @@ interface EventDao {
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
     fun getUserWithEvents(userId: Int): Flow<UserWithEvents?>
 
-    @Query("SELECT * FROM events WHERE teamId = :teamId")
-    suspend fun getEventsByTeam(teamId: String): List<EventEntity>
-
-    @Query("SELECT * FROM events")
-    suspend fun getAllEventsOnce(): List<EventEntity>
-
     @Upsert
-    suspend fun insertEvents(events: List<EventEntity>) // <-- добавь это
+    suspend fun insertEvents(events: List<EventEntity>)
 }

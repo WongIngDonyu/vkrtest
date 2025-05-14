@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,26 +27,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.vkr.R
 
 @Composable
-fun WelcomeScreen(
-    navController: NavController,
-    viewModel: WelcomeViewModel = viewModel()
-) {
+fun WelcomeScreen(navController: NavController, viewModel: WelcomeViewModel = viewModel()) {
     val navEvent by viewModel.navEvent.collectAsState()
-
-    // Навигация
     LaunchedEffect(navEvent) {
         navEvent?.let {
             navController.navigate(it)
             viewModel.onNavigationHandled()
         }
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Верхнее изображение
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             Image(
                 painter = painterResource(id = R.drawable.gg11),
@@ -61,8 +53,6 @@ fun WelcomeScreen(
                 Text("Вместе за чистое будущее!", style = MaterialTheme.typography.bodyMedium.copy(color = Color.White))
             }
         }
-
-        // Нижнее изображение
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             Image(
                 painter = painterResource(id = R.drawable.ima1),
@@ -76,8 +66,6 @@ fun WelcomeScreen(
                 Text("Присоединяйся к командам и внеси свой вклад!", style = MaterialTheme.typography.bodyMedium.copy(color = Color.White))
             }
         }
-
-        // Кнопки
         Column(
             modifier = Modifier
                 .fillMaxWidth()

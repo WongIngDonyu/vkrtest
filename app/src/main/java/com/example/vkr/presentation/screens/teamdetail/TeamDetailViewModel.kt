@@ -18,9 +18,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class TeamDetailViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+class TeamDetailViewModel(application: Application) : AndroidViewModel(application) {
 
     private val context = application.applicationContext
     private val teamDao = AppDatabase.getInstance(context).teamDao()
@@ -55,11 +53,8 @@ class TeamDetailViewModel(
             } catch (e: Exception) {
                 null
             }
-
             val eventList = if (response?.isSuccessful == true) {
                 val dtos = response.body() ?: emptyList()
-
-                // Преобразуем и сохраняем в Room
                 val entities = dtos.map { dto ->
                     EventEntity(
                         id = dto.id,
@@ -76,13 +71,11 @@ class TeamDetailViewModel(
                         isFavorite = dto.favorite
                     )
                 }
-
-                eventDao.insertEvents(entities) // ← сохраняем
+                eventDao.insertEvents(entities)
                 entities
             } else {
                 emptyList()
             }
-
             withContext(Dispatchers.Main) {
                 team = t
                 users = u
@@ -96,16 +89,13 @@ class TeamDetailViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val user = currentUser ?: return@launch
             val tid = team?.id ?: return@launch
-
             try {
                 val response = RetrofitInstance.teamApi.joinTeam(tid, user.id)
                 if (response.isSuccessful) {
-                    // ⬇️ Получаем обновлённого пользователя с сервера
                     val updatedUserResponse = RetrofitInstance.api.getUserByPhone(user.phone)
                     if (updatedUserResponse.isSuccessful) {
                         val updatedUser = updatedUserResponse.body()
                         if (updatedUser != null) {
-                            // ⬇️ Обновляем локально
                             userDao.insertUser(
                                 UserEntity(
                                     id = updatedUser.id,
@@ -121,8 +111,6 @@ class TeamDetailViewModel(
                             )
                         }
                     }
-
-                    // 🔁 Перезагружаем всё
                     loadTeam(tid)
                 } else {
                     Log.e("TeamJoin", "Failed to join team: ${response.code()}")
@@ -137,11 +125,9 @@ class TeamDetailViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val user = currentUser ?: return@launch
             val tid = team?.id ?: return@launch
-
             try {
                 val response = RetrofitInstance.teamApi.leaveTeam(tid, user.id)
                 if (response.isSuccessful) {
-                    // ⬇️ Тоже обновляем пользователя
                     val updatedUserResponse = RetrofitInstance.api.getUserByPhone(user.phone)
                     if (updatedUserResponse.isSuccessful) {
                         val updatedUser = updatedUserResponse.body()
@@ -161,7 +147,6 @@ class TeamDetailViewModel(
                             )
                         }
                     }
-
                     loadTeam(tid)
                 } else {
                     Log.e("TeamLeave", "Failed to leave team: ${response.code()}")

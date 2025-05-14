@@ -8,16 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,8 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.vkr.data.AppDatabase
-import com.example.vkr.data.model.TeamEntity
 import com.example.vkr.ui.components.rememberMapViewWithLifecycle
 import com.yandex.mapkit.geometry.LinearRing
 import com.yandex.mapkit.geometry.Point
@@ -60,7 +53,6 @@ fun SearchScreen(navController: NavController) {
             color = entity.color
         )
     }
-
     Box(modifier = Modifier.fillMaxSize()) {
         if (teamAreas.isNotEmpty()) {
             AndroidView(
@@ -79,12 +71,9 @@ fun SearchScreen(navController: NavController) {
                         isRotateGesturesEnabled = false
                         isTiltGesturesEnabled = false
                     }
-
                     val mapObjects = mapView.map.mapObjects
                     mapObjects.clear()
-
                     val polygons = mutableMapOf<PolygonMapObject, TeamArea>()
-
                     teamAreas.forEach { area ->
                         if (area.points.size >= 3) {
                             val polygon = Polygon(LinearRing(area.points), emptyList())
@@ -100,7 +89,6 @@ fun SearchScreen(navController: NavController) {
                             label.setText(area.teamName)
                         }
                     }
-
                     mapView.map.addInputListener(object : InputListener {
                         override fun onMapTap(map: Map, point: Point) {
                             for ((polygon, area) in polygons) {
@@ -110,10 +98,8 @@ fun SearchScreen(navController: NavController) {
                                 }
                             }
                         }
-
                         override fun onMapLongTap(map: Map, point: Point) {}
                     })
-
                     mapView
                 },
                 modifier = Modifier.matchParentSize()
@@ -122,7 +108,6 @@ fun SearchScreen(navController: NavController) {
 
         if (teams.isNotEmpty()) {
             val topTeams = teams.sortedByDescending { it.points }.take(3)
-
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -140,9 +125,7 @@ fun SearchScreen(navController: NavController) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-
                 Spacer(Modifier.height(4.dp))
-
                 topTeams.forEachIndexed { index, team ->
                     Text(
                         text = "${index + 1}. ${team.name} — ${team.points} очков",

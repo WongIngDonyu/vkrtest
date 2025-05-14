@@ -12,7 +12,6 @@ class EventRepository(
         val response = api.getAllEvents()
         if (response.isSuccessful) {
             val dtos = response.body() ?: emptyList()
-
             val entities = dtos.map { dto ->
                 EventEntity(
                     id = dto.id,
@@ -23,15 +22,14 @@ class EventRepository(
                     longitude = dto.longitude,
                     dateTime = dto.dateTime,
                     creatorId = dto.creatorId,
-                    teamId = null, // teamId отсутствует в DTO, только teamName
+                    teamId = null,
                     imageUri = dto.imageUri.firstOrNull(),
                     isFinished = dto.finished
                 )
             }
-
             eventDao.insertEvents(entities)
         } else {
-            println("❗ Ошибка при загрузке событий: ${response.errorBody()?.string()}")
+            println("Ошибка при загрузке событий: ${response.errorBody()?.string()}")
         }
     }
 }

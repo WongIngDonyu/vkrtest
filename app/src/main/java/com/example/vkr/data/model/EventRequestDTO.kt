@@ -8,7 +8,7 @@ data class EventRequestDTO(
     val longitude: Double,
     val dateTime: String,
     val creatorId: String,
-    val teamId: String?, // ⬅ отправляем ID
+    val teamId: String?,
     val imageUri: List<String> = emptyList(),
     val isFinished: Boolean = false
 )

@@ -11,14 +11,8 @@ interface  TeamApi {
     suspend fun getAllTeams(): Response<List<TeamDTO>>
 
     @PUT("teams/{teamId}/join/{userId}")
-    suspend fun joinTeam(
-        @Path("teamId") teamId: String,
-        @Path("userId") userId: String
-    ): Response<Void>
+    suspend fun joinTeam(@Path("teamId") teamId: String, @Path("userId") userId: String): Response<Void>
 
     @PUT("teams/{teamId}/leave/{userId}")
-    suspend fun leaveTeam(
-        @Path("teamId") teamId: String,
-        @Path("userId") userId: String
-    ): Response<Void>
+    suspend fun leaveTeam(@Path("teamId") teamId: String, @Path("userId") userId: String): Response<Void>
 }
